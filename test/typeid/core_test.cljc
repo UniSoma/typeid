@@ -347,8 +347,10 @@
 
 (deftest encode-function-test
   (testing "Encode UUID bytes with prefix"
-    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+    (let [uuid-bytes #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                              0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+                        :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                        0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           {:keys [ok error]} (t/encode uuid-bytes "user")]
       (is (nil? error))
       (is (string? ok))
@@ -356,22 +358,26 @@
       (is (= 31 (count ok)))))
 
   (testing "Encode UUID bytes without prefix"
-    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+    (let [uuid-bytes #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                              0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+                        :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                        0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           {:keys [ok error]} (t/encode uuid-bytes "")]
       (is (nil? error))
       (is (string? ok))
       (is (= 26 (count ok)))))
 
   (testing "Reject invalid UUID length"
-    (let [short-uuid (byte-array (repeat 8 0))
+    (let [short-uuid #?(:clj (byte-array (repeat 8 0))
+                        :cljs (js/Uint8Array. 8))
           {:keys [ok error]} (t/encode short-uuid "user")]
       (is (nil? ok))
       (is (some? error))
       (is (= :invalid-uuid-length (:type error)))))
 
   (testing "Reject invalid prefix"
-    (let [uuid-bytes (byte-array (repeat 16 0))
+    (let [uuid-bytes #?(:clj (byte-array (repeat 16 0))
+                        :cljs (js/Uint8Array. 16))
           {:keys [ok error]} (t/encode uuid-bytes "User123")]
       (is (nil? ok))
       (is (some? error))
@@ -397,8 +403,10 @@
 
 (deftest uuid-hex-conversion-test
   (testing "Convert UUID bytes to hex string"
-    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+    (let [uuid-bytes #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                              0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+                        :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                        0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           {:keys [ok error]} (t/uuid->hex uuid-bytes)]
       (is (nil? error))
       (is (string? ok))
@@ -428,8 +436,10 @@
       (is (= :invalid-hex-char (:type error)))))
 
   (testing "UUID->hex->UUID round-trip"
-    (let [original-uuid (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+    (let [original-uuid #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                                 0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+                           :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           {hex-str :ok} (t/uuid->hex original-uuid)
           {recovered-uuid :ok} (t/hex->uuid hex-str)]
       (is (= (vec original-uuid) (vec recovered-uuid))))))
@@ -449,8 +459,10 @@
 
 (deftest encode-decode-round-trip-test
   (testing "Encode→decode round-trip preserves UUID"
-    (let [original-uuid (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+    (let [original-uuid #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                                 0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+                           :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           {typeid-str :ok} (t/encode original-uuid "order")
           {recovered-uuid :ok} (t/decode typeid-str)]
       (is (= (vec original-uuid) (vec recovered-uuid)))))

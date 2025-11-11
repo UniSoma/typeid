@@ -4,8 +4,11 @@
    These tests ensure 100% specification compliance with the TypeID spec v0.3.0."
   (:require #?(:clj [clj-yaml.core :as yaml])
     #?(:clj [clojure.java.io :as io])
-    [clojure.test :refer [deftest is testing]]
-    [typeid.core :as t]))
+    #?(:clj [clojure.string :as string])
+    #?(:clj [clojure.test :refer [deftest is testing]]
+       :cljs [cljs.test :refer [deftest is testing]])
+    #?(:clj [typeid.core :as t]
+       :cljs [typeid.core :as t])))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -39,7 +42,8 @@
                prefix (:prefix test-case)
                uuid-hex (:uuid test-case)
                ;; Parse UUID from hex string (with or without dashes)
-               uuid-hex-clean (clojure.string/replace uuid-hex #"-" "")
+               uuid-hex-clean #?(:clj (string/replace uuid-hex #"-" "")
+                                 :cljs uuid-hex)
                {uuid-bytes :ok} (t/hex->uuid uuid-hex-clean)
                {encoded-typeid :ok encode-error :error} (t/encode uuid-bytes prefix)]
            (is (nil? encode-error)
@@ -60,7 +64,8 @@
                expected-prefix (:prefix test-case)
                expected-uuid (:uuid test-case)
                ;; Parse UUID from hex string (with or without dashes)
-               expected-uuid-clean (clojure.string/replace expected-uuid #"-" "")
+               expected-uuid-clean #?(:clj (string/replace expected-uuid #"-" "")
+                                      :cljs expected-uuid)
                {parsed :ok parse-error :error} (t/parse typeid-str)]
            (is (nil? parse-error)
              (str "Test case '" test-name "' should not error on parse: "

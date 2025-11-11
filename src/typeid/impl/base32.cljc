@@ -5,7 +5,7 @@
    and uses 0-9a-z (32 characters total)."
   #?(:clj (:import [java.math BigInteger])))
 
-(set! *warn-on-reflection* true)
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; T013: Encode alphabet (index → character)
 (def ^:private encode-alphabet
@@ -30,10 +30,10 @@
   ^String [uuid-bytes]
   #?(:clj
      (let [;; Convert bytes to BigInteger (unsigned)
-           bigint (BigInteger. 1 ^bytes uuid-bytes)
+           big-int (BigInteger. 1 ^bytes uuid-bytes)
            sb (StringBuilder. 26)]
        ;; Extract each 5-bit group from right to left
-       (loop [n bigint
+       (loop [n big-int
               chars-left 26]
          (when (pos? chars-left)
            (let [remainder (.remainder n (BigInteger/valueOf 32))
@@ -96,29 +96,29 @@
   #?(:clj
      ;; JVM: Use BigInteger for decoding
      (let [;; Convert base32 string to BigInteger
-           bigint (loop [i 0
-                         acc (BigInteger/ZERO)]
-                    (if (< i 26)
-                      (let [ch (.charAt base32-str i)
-                            val (or (get decode-map ch)
-                                  (throw (ex-info "Invalid base32 character"
-                                           {:type :invalid-base32-char
-                                            :char ch
-                                            :position i})))]
-                        (recur (inc i)
-                          (.add (.multiply acc (BigInteger/valueOf 32))
-                            (BigInteger/valueOf val))))
-                      acc))
+           big-int (loop [i 0
+                          acc (BigInteger/valueOf 0)]
+                     (if (< i 26)
+                       (let [ch (.charAt base32-str i)
+                             digit-val (or (get decode-map ch)
+                                         (throw (ex-info "Invalid base32 character"
+                                                  {:type :invalid-base32-char
+                                                   :char ch
+                                                   :position i})))]
+                         (recur (inc i)
+                           (.add (.multiply acc (BigInteger/valueOf 32))
+                             (BigInteger/valueOf digit-val))))
+                       acc))
            ;; Convert to byte array (16 bytes)
-           bytes (.toByteArray bigint)]
+           byte-arr (.toByteArray big-int)]
        ;; Handle padding: BigInteger may add a sign byte or have fewer than 16 bytes
        (cond
-         (= 16 (alength bytes)) bytes
-         (< (alength bytes) 16) (let [result (byte-array 16)]
-                                  (System/arraycopy bytes 0 result (- 16 (alength bytes)) (alength bytes))
-                                  result)
+         (= 16 (alength byte-arr)) byte-arr
+         (< (alength byte-arr) 16) (let [result (byte-array 16)]
+                                     (System/arraycopy byte-arr 0 result (- 16 (alength byte-arr)) (alength byte-arr))
+                                     result)
          :else (let [result (byte-array 16)]
-                 (System/arraycopy bytes 1 result 0 16)
+                 (System/arraycopy byte-arr 1 result 0 16)
                  result)))
      :cljs
      ;; ClojureScript: Simple implementation
@@ -128,12 +128,12 @@
               acc-bits 0]
          (if (< char-idx 26)
            (let [ch (.charAt base32-str char-idx)
-                 val (or (get decode-map ch)
-                       (throw (ex-info "Invalid base32 character"
-                                {:type :invalid-base32-char
-                                 :char ch
-                                 :position char-idx})))
-                 new-acc (bit-or (bit-shift-left acc 5) val)
+                 digit-val (or (get decode-map ch)
+                             (throw (ex-info "Invalid base32 character"
+                                      {:type :invalid-base32-char
+                                       :char ch
+                                       :position char-idx})))
+                 new-acc (bit-or (bit-shift-left acc 5) digit-val)
                  new-bits (+ acc-bits 5)]
              (if (>= new-bits 8)
                (let [byte-val (bit-and (bit-shift-right new-acc (- new-bits 8)) 0xFF)

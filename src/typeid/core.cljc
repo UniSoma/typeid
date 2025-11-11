@@ -259,8 +259,11 @@
     {:error {:type :invalid-uuid-length
              :message "UUID must be exactly 16 bytes"
              :data {:uuid-bytes uuid-bytes
-                    :length (if (bytes? uuid-bytes) (alength uuid-bytes) nil)}}}
-    (let [hex-str (apply str (map #(format "%02x" (bit-and % 0xff)) uuid-bytes))]
+                    :length #?(:clj (if (bytes? uuid-bytes) (alength uuid-bytes) nil)
+                               :cljs (if (instance? js/Uint8Array uuid-bytes) (.-length uuid-bytes) nil))}}}
+    (let [hex-str (apply str (map #?(:clj (fn [b] (format "%02x" (bit-and b 0xff)))
+                                     :cljs (fn [b] (.padStart (.toString (bit-and b 0xff) 16) 2 "0")))
+                               uuid-bytes))]
       {:ok hex-str})))
 
 ;; T048: hex->uuid function (User Story 3)
@@ -298,11 +301,14 @@
 
     :else
     (try
-      (let [uuid-bytes (byte-array 16)]
+      (let [uuid-bytes #?(:clj (byte-array 16)
+                          :cljs (js/Uint8Array. 16))]
         (dotimes [i 16]
           (let [hex-pair (subs hex-string (* i 2) (* (inc i) 2))
-                byte-val (Integer/parseInt hex-pair 16)]
-            (aset uuid-bytes i (unchecked-byte byte-val))))
+                byte-val #?(:clj (Integer/parseInt hex-pair 16)
+                            :cljs (js/parseInt hex-pair 16))]
+            (aset uuid-bytes i #?(:clj (unchecked-byte byte-val)
+                                  :cljs byte-val))))
         {:ok uuid-bytes})
       (catch #?(:clj Exception :cljs js/Error) e
         {:error {:type :hex-parse-error

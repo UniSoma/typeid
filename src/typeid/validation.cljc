@@ -1,9 +1,10 @@
 (ns typeid.validation
   "Validation predicates for TypeID components.
 
-   Manual validation predicates with zero external dependencies.")
+   Manual validation predicates with zero external dependencies."
+  (:require [clojure.string :as str]))
 
-(set! *warn-on-reflection* true)
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; T017: Prefix validation predicates
 (def ^:private prefix-pattern
@@ -70,7 +71,7 @@
   [s]
   (and (string? s)
     (<= 26 (count s) 90)
-    (= s (clojure.string/lower-case s))))
+    (= s (str/lower-case s))))
 
 ;; T019: UUID bytes validation predicates
 (defn valid-uuid-bytes?
@@ -87,10 +88,10 @@
    - Variant bits (64-65) = 10"
   [b]
   (and (valid-uuid-bytes? b)
-    #?(:clj (let [^bytes bytes b
+    #?(:clj (let [^bytes uuid-bytes b
                      ;; Mask to unsigned to avoid sign extension issues
-                  byte6 (bit-and (aget bytes 6) 0xFF)
-                  byte8 (bit-and (aget bytes 8) 0xFF)]
+                  byte6 (bit-and (aget uuid-bytes 6) 0xFF)
+                  byte8 (bit-and (aget uuid-bytes 8) 0xFF)]
               (and (= 7 (bit-and (bit-shift-right byte6 4) 0x0F))
                 (= 2 (bit-and (bit-shift-right byte8 6) 0x03))))
        :cljs (and (= 7 (bit-and (bit-shift-right (aget b 6) 4) 0x0F))

@@ -1,8 +1,7 @@
 (ns typeid.impl.util
-  "Shared utility functions for TypeID implementation."
-  (:require [clojure.string :as str]))
+  "Shared utility functions for TypeID implementation.")
 
-(set! *warn-on-reflection* true)
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; T021: Utility functions
 (defn split-typeid
