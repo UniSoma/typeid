@@ -1,14 +1,14 @@
 (ns typeid.core
-    "TypeID generation, parsing, and validation API.
+  "TypeID generation, parsing, and validation API.
 
    TypeIDs are type-safe, K-sortable, globally unique identifiers that combine
    a type prefix with a UUIDv7 suffix encoded in base32.
 
    Example: user_01h5fskfsk4fpeqwnsyz5hj55t"
-    (:require [typeid.impl.base32 :as base32]
-              [typeid.impl.uuid :as uuid]
-              [typeid.impl.util :as util]
-              [typeid.validation :as v]))
+  (:require [typeid.impl.base32 :as base32]
+    [typeid.impl.util :as util]
+    [typeid.impl.uuid :as uuid]
+    [typeid.validation :as v]))
 
 (set! *warn-on-reflection* true)
 
@@ -36,16 +36,16 @@
   [prefix]
   ;; Validate prefix
   (let [prefix-validation (v/validate-prefix prefix)]
-       (if (:error prefix-validation)
-           (throw (ex-info (:message (:error prefix-validation))
-                           (:error prefix-validation)))
+    (if (:error prefix-validation)
+      (throw (ex-info (:message (:error prefix-validation))
+               (:error prefix-validation)))
       ;; Generate UUIDv7
-           (let [uuid-bytes (uuid/generate-uuidv7)
+      (let [uuid-bytes (uuid/generate-uuidv7)
             ;; Encode to base32
-                 suffix (base32/encode uuid-bytes)
+            suffix (base32/encode uuid-bytes)
             ;; Combine prefix + suffix
-                 typeid-str (util/join-typeid prefix suffix)]
-                typeid-str))))
+            typeid-str (util/join-typeid prefix suffix)]
+        typeid-str))))
 
 ;; T030: Parse function
 (defn parse
@@ -76,41 +76,41 @@
   [typeid-str]
   ;; Basic string validation
   (when-not (string? typeid-str)
-            (throw (ex-info "TypeID must be a string"
-                            {:type :invalid-typeid-type
-                             :value typeid-str
-                             :value-type (type typeid-str)})))
+    (throw (ex-info "TypeID must be a string"
+             {:type :invalid-typeid-type
+              :value typeid-str
+              :value-type (type typeid-str)})))
 
   ;; Check length
   (when-not (<= 26 (count typeid-str) 90)
-            (throw (ex-info "TypeID must be 26-90 characters"
-                            {:type :invalid-length
-                             :typeid typeid-str
-                             :length (count typeid-str)})))
+    (throw (ex-info "TypeID must be 26-90 characters"
+             {:type :invalid-length
+              :typeid typeid-str
+              :length (count typeid-str)})))
 
   ;; Check lowercase
   (when-not (= typeid-str (clojure.string/lower-case typeid-str))
-            (throw (ex-info "TypeID must be all lowercase"
-                            {:type :invalid-case
-                             :typeid typeid-str})))
+    (throw (ex-info "TypeID must be all lowercase"
+             {:type :invalid-case
+              :typeid typeid-str})))
 
   ;; Split into prefix and suffix
   (let [[prefix suffix] (util/split-typeid typeid-str)]
     ;; Validate prefix
-       (let [prefix-validation (v/validate-prefix prefix)]
-            (when (:error prefix-validation)
-                  (throw (ex-info (:message (:error prefix-validation))
-                                  (:error prefix-validation)))))
+    (let [prefix-validation (v/validate-prefix prefix)]
+      (when (:error prefix-validation)
+        (throw (ex-info (:message (:error prefix-validation))
+                 (:error prefix-validation)))))
 
     ;; Validate suffix format
-       (when-not (v/valid-base32-suffix? suffix)
-                 (throw (ex-info "Invalid TypeID suffix"
-                                 {:type :invalid-suffix
-                                  :suffix suffix})))
+    (when-not (v/valid-base32-suffix? suffix)
+      (throw (ex-info "Invalid TypeID suffix"
+               {:type :invalid-suffix
+                :suffix suffix})))
 
     ;; Decode suffix to UUID
-       (let [uuid-bytes (base32/decode suffix)]
-            {:prefix prefix
-             :suffix suffix
-             :uuid uuid-bytes
-             :typeid typeid-str})))
+    (let [uuid-bytes (base32/decode suffix)]
+      {:prefix prefix
+       :suffix suffix
+       :uuid uuid-bytes
+       :typeid typeid-str})))
