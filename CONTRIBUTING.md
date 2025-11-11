@@ -37,7 +37,7 @@ This project adheres to a code of conduct that promotes respect, inclusivity, an
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/jonasrodrigues/typeid.git
+   git remote add upstream https://github.com/UniSoma/typeid.git
    ```
 
 ## Development Setup
@@ -307,9 +307,9 @@ Releases are managed by project maintainers. The process is:
 
 ## Getting Help
 
-- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/jonasrodrigues/typeid/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/jonasrodrigues/typeid/discussions)
-- **Documentation**: See [README.md](README.md) and [API docs](https://jonasrodrigues.github.io/typeid/)
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/UniSoma/typeid/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/UniSoma/typeid/discussions)
+- **Documentation**: See [README.md](README.md) and [API docs](https://unisoma.github.io/typeid/)
 
 ## Recognition
 

@@ -455,6 +455,6 @@ A: Validation is ~500ns per call. If input is trusted (e.g., internal services),
 
 ## Getting Help
 
-- **Issues**: [github.com/example/typeid/issues](https://github.com/example/typeid/issues)
-- **Documentation**: [https://example.com/typeid/docs](https://example.com/typeid/docs)
+- **Issues**: [github.com/UniSoma/typeid/issues](https://github.com/UniSoma/typeid/issues)
+- **Documentation**: [https://unisoma.github.io/typeid/](https://unisoma.github.io/typeid/)
 - **Clojurians Slack**: #typeid channel

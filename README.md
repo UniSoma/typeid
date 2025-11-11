@@ -3,7 +3,7 @@
 > Type-safe, K-sortable, globally unique identifiers inspired by Stripe IDs
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.github.jonasrodrigues/typeid.svg)](https://clojars.org/com.github.jonasrodrigues/typeid)
-[![CI](https://github.com/jonasrodrigues/typeid/workflows/CI/badge.svg)](https://github.com/jonasrodrigues/typeid/actions)
+[![CI](https://github.com/UniSoma/typeid/workflows/CI/badge.svg)](https://github.com/UniSoma/typeid/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## What is TypeID?
@@ -67,7 +67,7 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ## Documentation
 
-- **[API Reference (Codox)](https://jonasrodrigues.github.io/typeid/)** - Full API documentation
+- **[API Reference (Codox)](https://unisoma.github.io/typeid/)** - Full API documentation
 - **[Quickstart Guide](specs/001-typeid-implementation/quickstart.md)** - Step-by-step tutorial
 - **[TypeID Specification](https://github.com/jetify-com/typeid)** - Official spec
 

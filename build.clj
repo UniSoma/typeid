@@ -20,12 +20,12 @@
                 :version version
                 :basis @basis
                 :src-dirs ["src"]
-                :scm {:url "https://github.com/jonasrodrigues/typeid"
-                      :connection "scm:git:git://github.com/jonasrodrigues/typeid.git"
-                      :developerConnection "scm:git:ssh://git@github.com/jonasrodrigues/typeid.git"
+                :scm {:url "https://github.com/UniSoma/typeid"
+                      :connection "scm:git:git://github.com/UniSoma/typeid.git"
+                      :developerConnection "scm:git:ssh://git@github.com/UniSoma/typeid.git"
                       :tag (str "v" version)}
                 :pom-data [[:description "Type-safe, K-sortable unique identifiers for Clojure/ClojureScript"]
-                           [:url "https://github.com/jonasrodrigues/typeid"]
+                           [:url "https://github.com/UniSoma/typeid"]
                            [:licenses
                             [:license
                              [:name "MIT License"]
@@ -61,7 +61,7 @@
   (jar nil)
   (let [pom-file (b/pom-path {:lib lib :class-dir class-dir})]
     ((requiring-resolve 'deps-deploy.deps-deploy/deploy)
-     {:installer :remote
-      :artifact jar-file
-      :pom-file pom-file
-      :sign-releases? sign})))
+      {:installer :remote
+       :artifact jar-file
+       :pom-file pom-file
+       :sign-releases? sign})))
