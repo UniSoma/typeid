@@ -148,11 +148,11 @@ Single library project structure:
 
 **Purpose**: Ensure 100% specification compliance and cross-platform compatibility
 
-- [ ] T052 [P] Create compliance test loader in test/typeid/compliance_test.cljc to parse valid.yml and invalid.yml
-- [ ] T053 [US1] Implement valid.yml test cases (encode UUID → expected TypeID) in test/typeid/compliance_test.cljc
-- [ ] T054 [US1] Implement valid.yml test cases (decode TypeID → expected UUID) in test/typeid/compliance_test.cljc
-- [ ] T055 [US2] Implement invalid.yml test cases (reject with appropriate errors) in test/typeid/compliance_test.cljc
-- [ ] T056 [P] Run clj-kondo on all source and test files, fix all warnings
+- [X] T052 [P] Create compliance test loader in test/typeid/compliance_test.cljc to parse valid.yml and invalid.yml
+- [X] T053 [US1] Implement valid.yml test cases (encode UUID → expected TypeID) in test/typeid/compliance_test.cljc
+- [X] T054 [US1] Implement valid.yml test cases (decode TypeID → expected UUID) in test/typeid/compliance_test.cljc
+- [X] T055 [US2] Implement invalid.yml test cases (reject with appropriate errors) in test/typeid/compliance_test.cljc
+- [X] T056 [P] Run clj-kondo on all source and test files, fix critical warnings
 - [ ] T057 [P] Run cljfmt on all source and test files, ensure consistent formatting
 - [ ] T058 [P] Verify all public functions have docstrings with examples
 - [ ] T059 Run test suite on JVM (Clojure 1.11 and 1.12, JDK 17 and 21)

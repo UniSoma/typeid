@@ -5,12 +5,13 @@
    a type prefix with a UUIDv7 suffix encoded in base32.
 
    Example: user_01h5fskfsk4fpeqwnsyz5hj55t"
-  (:require [typeid.impl.base32 :as base32]
+  (:require [clojure.string :as str]
+    [typeid.impl.base32 :as base32]
     [typeid.impl.util :as util]
     [typeid.impl.uuid :as uuid]
     [typeid.validation :as v]))
 
-(set! *warn-on-reflection* true)
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; T029: Generate function
 (defn generate
@@ -87,9 +88,14 @@
              :data {:typeid typeid-str
                     :length (count typeid-str)}}}
 
-    (not (= typeid-str (clojure.string/lower-case typeid-str)))
+    (not (= typeid-str (str/lower-case typeid-str)))
     {:error {:type :invalid-case
              :message "TypeID must be all lowercase"
+             :data {:typeid typeid-str}}}
+
+    (.startsWith typeid-str "_")
+    {:error {:type :invalid-format
+             :message "TypeID cannot start with underscore"
              :data {:typeid typeid-str}}}
 
     :else
@@ -150,9 +156,14 @@
              :data {:typeid typeid-str
                     :length (count typeid-str)}}}
 
-    (not (= typeid-str (clojure.string/lower-case typeid-str)))
+    (not (= typeid-str (str/lower-case typeid-str)))
     {:error {:type :invalid-case
              :message "TypeID must be all lowercase"
+             :data {:typeid typeid-str}}}
+
+    (.startsWith typeid-str "_")
+    {:error {:type :invalid-format
+             :message "TypeID cannot start with underscore"
              :data {:typeid typeid-str}}}
 
     :else
@@ -192,7 +203,10 @@
     {:error {:type :invalid-uuid-length
              :message "UUID must be exactly 16 bytes"
              :data {:uuid-bytes uuid-bytes
-                    :length (if (bytes? uuid-bytes) (alength uuid-bytes) nil)}}}
+                    :length (if #?(:clj (bytes? uuid-bytes)
+                                   :cljs (instance? js/Uint8Array uuid-bytes))
+                              (alength uuid-bytes)
+                              nil)}}}
 
     :else
     ;; Validate prefix
