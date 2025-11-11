@@ -111,6 +111,7 @@
 
   repl
   {:doc "Start nREPL server with dev utilities"
+   :override-builtin true
    :task (shell "clojure -M:dev:nrepl")}
 
   repl:headless
