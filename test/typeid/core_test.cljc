@@ -342,3 +342,136 @@
           {:keys [ok error]} (t/parse too-long-typeid)]
       (is (nil? ok))
       (is (= :invalid-length (:type error))))))
+
+;; T041-T045: User Story 3 - UUID Conversion Tests
+
+(deftest encode-function-test
+  (testing "Encode UUID bytes with prefix"
+    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+          {:keys [ok error]} (t/encode uuid-bytes "user")]
+      (is (nil? error))
+      (is (string? ok))
+      (is (.startsWith ok "user_"))
+      (is (= 31 (count ok)))))
+
+  (testing "Encode UUID bytes without prefix"
+    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+          {:keys [ok error]} (t/encode uuid-bytes "")]
+      (is (nil? error))
+      (is (string? ok))
+      (is (= 26 (count ok)))))
+
+  (testing "Reject invalid UUID length"
+    (let [short-uuid (byte-array (repeat 8 0))
+          {:keys [ok error]} (t/encode short-uuid "user")]
+      (is (nil? ok))
+      (is (some? error))
+      (is (= :invalid-uuid-length (:type error)))))
+
+  (testing "Reject invalid prefix"
+    (let [uuid-bytes (byte-array (repeat 16 0))
+          {:keys [ok error]} (t/encode uuid-bytes "User123")]
+      (is (nil? ok))
+      (is (some? error))
+      (is (= :invalid-prefix-format (:type error))))))
+
+(deftest decode-function-test
+  (testing "Decode valid TypeID to UUID bytes"
+    (let [{:keys [ok error]} (t/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (nil? error))
+      (is (some? ok))
+      (is (= 16 (alength ok)))))
+
+  (testing "Decode TypeID without prefix"
+    (let [{:keys [ok error]} (t/decode "01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (nil? error))
+      (is (some? ok))
+      (is (= 16 (alength ok)))))
+
+  (testing "Decode rejects invalid TypeID"
+    (let [{:keys [ok error]} (t/decode "invalid")]
+      (is (nil? ok))
+      (is (some? error)))))
+
+(deftest uuid-hex-conversion-test
+  (testing "Convert UUID bytes to hex string"
+    (let [uuid-bytes (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                      0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+          {:keys [ok error]} (t/uuid->hex uuid-bytes)]
+      (is (nil? error))
+      (is (string? ok))
+      (is (= 32 (count ok)))
+      (is (= "0188e5f5f34a7b3d9f2a1c5de67fa8c1" ok))
+      (is (re-matches #"^[0-9a-f]{32}$" ok))))
+
+  (testing "Convert hex string to UUID bytes"
+    (let [{:keys [ok error]} (t/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8c1")]
+      (is (nil? error))
+      (is (some? ok))
+      (is (= 16 (alength ok)))
+      (is (= (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])
+            (vec ok)))))
+
+  (testing "Reject invalid hex length"
+    (let [{:keys [ok error]} (t/hex->uuid "0188e5")]
+      (is (nil? ok))
+      (is (some? error))
+      (is (= :invalid-hex-length (:type error)))))
+
+  (testing "Reject invalid hex characters"
+    (let [{:keys [ok error]} (t/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8cz")]
+      (is (nil? ok))
+      (is (some? error))
+      (is (= :invalid-hex-char (:type error)))))
+
+  (testing "UUID->hex->UUID round-trip"
+    (let [original-uuid (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+          {hex-str :ok} (t/uuid->hex original-uuid)
+          {recovered-uuid :ok} (t/hex->uuid hex-str)]
+      (is (= (vec original-uuid) (vec recovered-uuid))))))
+
+(deftest typeid-map-conversion-test
+  (testing "Convert TypeID to map (unwrapped parse)"
+    (let [result (t/typeid->map "user_01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (map? result))
+      (is (= "user" (:prefix result)))
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix result)))
+      (is (= "user_01h5fskfsk4fpeqwnsyz5hj55t" (:typeid result)))
+      (is (some? (:uuid result)))))
+
+  (testing "typeid->map throws on invalid input"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/typeid->map "invalid")))))
+
+(deftest encode-decode-round-trip-test
+  (testing "Encode→decode round-trip preserves UUID"
+    (let [original-uuid (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+          {typeid-str :ok} (t/encode original-uuid "order")
+          {recovered-uuid :ok} (t/decode typeid-str)]
+      (is (= (vec original-uuid) (vec recovered-uuid)))))
+
+  (testing "Generate→decode→encode round-trip"
+    (let [typeid1 (t/generate "session")
+          {uuid-bytes :ok} (t/decode typeid1)
+          {typeid2 :ok} (t/encode uuid-bytes "session")]
+      ;; TypeIDs should be identical (same UUID)
+      (is (= typeid1 typeid2))
+      ;; Both should be valid
+      (is (some? uuid-bytes))
+      (is (string? typeid2)))))
+
+(deftest suffix-extraction-test
+  (testing "Extract suffix from TypeID with prefix"
+    (let [typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"
+          {parsed :ok} (t/parse typeid)]
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))))
+
+  (testing "Extract suffix from TypeID without prefix"
+    (let [typeid "01h5fskfsk4fpeqwnsyz5hj55t"
+          {parsed :ok} (t/parse typeid)]
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed))))))

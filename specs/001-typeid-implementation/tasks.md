@@ -125,20 +125,20 @@ Single library project structure:
 
 ### Tests for User Story 3
 
-- [ ] T041 [P] [US3] Create unit tests for from-uuid function in test/typeid/core_test.cljc with UUIDv4/v7 variants
-- [ ] T042 [P] [US3] Create unit tests for to-uuid function in test/typeid/core_test.cljc
-- [ ] T043 [P] [US3] Create unit tests for to-uuid-string function in test/typeid/core_test.cljc
-- [ ] T044 [P] [US3] Create unit tests for suffix extraction in test/typeid/core_test.cljc
+- [X] T041 [P] [US3] Create unit tests for encode function in test/typeid/core_test.cljc with UUID bytes conversion
+- [X] T042 [P] [US3] Create unit tests for decode function in test/typeid/core_test.cljc
+- [X] T043 [P] [US3] Create unit tests for uuid->hex and hex->uuid functions in test/typeid/core_test.cljc
+- [X] T044 [P] [US3] Create unit tests for suffix extraction (via parse) in test/typeid/core_test.cljc
 - [ ] T045 [P] [US3] Add property-based tests for UUID↔TypeID round-trip in test/typeid/properties_test.cljc
 
 ### Implementation for User Story 3
 
-- [ ] T046 [P] [US3] Implement typeid.core/from-uuid function in src/typeid/core.cljc per contracts/api.md:201-252
-- [ ] T047 [P] [US3] Implement typeid.core/to-uuid function in src/typeid/core.cljc per contracts/api.md:254-297
-- [ ] T048 [P] [US3] Implement typeid.core/to-uuid-string function in src/typeid/core.cljc per contracts/api.md:299-345
-- [ ] T049 [P] [US3] Implement typeid.core/get-prefix function in src/typeid/core.cljc per contracts/api.md:347-382
-- [ ] T050 [P] [US3] Implement typeid.core/get-suffix function in src/typeid/core.cljc per contracts/api.md:384-419
-- [ ] T051 [US3] Add docstrings with examples to all conversion functions per contracts/api.md
+- [X] T046 [P] [US3] Implement typeid.core/encode function in src/typeid/core.cljc per contracts/api.md:201-252
+- [X] T047 [P] [US3] Implement typeid.core/decode function in src/typeid/core.cljc per contracts/api.md:254-297
+- [X] T048 [P] [US3] Implement typeid.core/uuid->hex and hex->uuid functions in src/typeid/core.cljc per contracts/api.md:299-345
+- [X] T049 [P] [US3] Implement typeid.core/typeid->map function in src/typeid/core.cljc per contracts/api.md:347-419
+- [X] T050 [P] [US3] Implement suffix/prefix extraction via parse function (already complete)
+- [X] T051 [US3] Add docstrings with examples to all conversion functions per contracts/api.md
 
 **Checkpoint**: All user stories should now be independently functional - full TypeID lifecycle supported
 
