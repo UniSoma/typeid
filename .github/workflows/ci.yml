@@ -1,0 +1,76 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test-clj:
+    name: Test Clojure (JVM)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [17, 21]
+        clojure: [1.11.1, 1.12.0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: 1.11.1.1413
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: clj-deps-${{ hashFiles('deps.edn') }}
+      - name: Run tests
+        run: clojure -M:test -m kaocha.runner
+      - name: Run linter
+        run: clojure -M:lint
+      - name: Build jar
+        run: clojure -T:build jar
+      - name: Run coverage (Java 17, Clojure 1.11.1 only)
+        if: matrix.java == 17 && matrix.clojure == '1.11.1'
+        run: clojure -M:coverage
+      - name: Upload coverage to Codecov
+        if: matrix.java == 17 && matrix.clojure == '1.11.1'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./target/coverage/codecov.json
+          fail_ci_if_error: false
+
+  test-cljs:
+    name: Test ClojureScript (Node.js)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: 1.11.1.1413
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            node_modules
+          key: cljs-deps-${{ hashFiles('deps.edn', 'package.json') }}
+      - name: Install Node.js dependencies
+        run: npm install
+      - name: Run ClojureScript tests
+        run: clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn
+      - name: Lint ClojureScript
+        run: clojure -M:lint

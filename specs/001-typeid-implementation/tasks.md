@@ -27,18 +27,18 @@ Single library project structure:
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create directory structure per plan.md (src/typeid/, test/typeid/, dev/, .github/workflows/)
-- [ ] T002 Create deps.edn with :dev, :test, :coverage, :build, :cljs, :codox aliases per research.md
-- [ ] T003 [P] Create build.clj with clean, pom, jar, install, deploy tasks per research.md:469-535
-- [ ] T004 [P] Create .clj-kondo/config.edn with zero-tolerance configuration
-- [ ] T005 [P] Create .cljfmt.edn with Clojure formatting rules
-- [ ] T006 [P] Create .github/workflows/ci.yml with test-clj and test-cljs jobs per research.md:538-576
-- [ ] T007 [P] Create .github/workflows/release.yml for Clojars deployment per research.md:579-598
-- [ ] T008 [P] Create tests.cljs.edn for Kaocha ClojureScript configuration per research.md:602-615
-- [ ] T009 [P] Create package.json with Node.js dependencies per research.md:617-628
-- [ ] T010 [P] Create CHANGELOG.md with version 0.1.0-SNAPSHOT entry
-- [ ] T011 [P] Create LICENSE file (MIT License per plan.md)
-- [ ] T012 [P] Download reference test files valid.yml and invalid.yml to test/resources/
+- [X] T001 Create directory structure per plan.md (src/typeid/, test/typeid/, dev/, .github/workflows/)
+- [X] T002 Create deps.edn with :dev, :test, :coverage, :build, :cljs, :codox aliases per research.md
+- [X] T003 [P] Create build.clj with clean, pom, jar, install, deploy tasks per research.md:469-535
+- [X] T004 [P] Create .clj-kondo/config.edn with zero-tolerance configuration
+- [X] T005 [P] Create .cljfmt.edn with Clojure formatting rules
+- [X] T006 [P] Create .github/workflows/ci.yml with test-clj and test-cljs jobs per research.md:538-576
+- [X] T007 [P] Create .github/workflows/release.yml for Clojars deployment per research.md:579-598
+- [X] T008 [P] Create tests.cljs.edn for Kaocha ClojureScript configuration per research.md:602-615
+- [X] T009 [P] Create package.json with Node.js dependencies per research.md:617-628
+- [X] T010 [P] Create CHANGELOG.md with version 0.1.0-SNAPSHOT entry
+- [X] T011 [P] Create LICENSE file (MIT License per plan.md)
+- [X] T012 [P] Download reference test files valid.yml and invalid.yml to test/resources/
 
 **Checkpoint**: Project structure complete, ready for foundational code
 

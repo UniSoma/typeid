@@ -1,0 +1,13 @@
+{:indents {defn [[:block 1]]
+           defn- [[:block 1]]
+           defmacro [[:block 1]]
+           defprotocol [[:block 1]]
+           defrecord [[:block 1]]
+           deftest [[:block 1]]
+           testing [[:block 1]]
+           ns [[:block 0]]}
+ :remove-surrounding-whitespace? true
+ :remove-trailing-whitespace? true
+ :remove-consecutive-blank-lines? true
+ :insert-missing-whitespace? true
+ :align-associative? false}
