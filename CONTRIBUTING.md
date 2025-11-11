@@ -201,10 +201,10 @@ bb test:all          # Run both JVM and ClojureScript tests
 **Without Babashka:**
 
 ```bash
-clojure -M:test -m kaocha.runner                    # JVM tests
-clojure -M:test:cljs -m kaocha.runner :unit-cljs    # ClojureScript tests
-clojure -M:test:coverage                            # With coverage
-clojure -M:test -m kaocha.runner --watch            # Watch mode
+clojure -M:test -m kaocha.runner                                      # JVM tests
+clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn    # ClojureScript tests
+clojure -M:test:coverage                                              # With coverage
+clojure -M:test -m kaocha.runner --watch                              # Watch mode
 ```
 
 ### Writing Tests

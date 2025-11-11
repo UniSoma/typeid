@@ -25,6 +25,11 @@ pom.xml
 pom.xml.asc
 docs/
 
+# ClojureScript
+.cljs_node_repl/
+out/
+.cpcache/
+
 # clojure-lsp
 .lsp/.cache
 \?

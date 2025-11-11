@@ -15,7 +15,7 @@
 
   test:cljs
   {:doc "Run ClojureScript tests (requires Node.js)"
-   :task (shell "clojure -M:test:cljs -m kaocha.runner :unit-cljs")}
+   :task (shell "clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn")}
 
   test:coverage
   {:doc "Run tests with coverage report (requires 80% minimum)"
@@ -141,7 +141,7 @@
            (println "\n[1/4] Running JVM tests...")
            (shell "clojure -M:test -m kaocha.runner")
            (println "\n[2/4] Running ClojureScript tests...")
-           (shell "clojure -M:test:cljs -m kaocha.runner :unit-cljs")
+           (shell "clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn")
            (println "\n[3/4] Running linter...")
            (shell "clojure -M:lint")
            (println "\n[4/4] Checking formatting...")

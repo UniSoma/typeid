@@ -229,7 +229,7 @@ clojure -M:test -m kaocha.runner
 
 # ClojureScript tests (requires Node.js)
 npm install
-clojure -M:test:cljs -m kaocha.runner :unit-cljs
+clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn
 
 # Test coverage
 clojure -M:test:coverage
