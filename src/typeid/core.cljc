@@ -23,6 +23,8 @@
 
    Returns TypeID string like \"user_01h5fskfsk4fpeqwnsyz5hj55t\".
 
+   Throws ex-info if prefix is invalid.
+
    Example:
      (generate \"user\")
      ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
@@ -30,28 +32,28 @@
      (generate \"\")
      ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
-   Throws ex-info if prefix is invalid.
-
    See also: `parse`, `validate`"
   [prefix]
   ;; Validate prefix
   (let [prefix-validation (v/validate-prefix prefix)]
-    (if (:error prefix-validation)
+    (when (:error prefix-validation)
       (throw (ex-info (:message (:error prefix-validation))
-               (:error prefix-validation)))
-      ;; Generate UUIDv7
-      (let [uuid-bytes (uuid/generate-uuidv7)
-            ;; Encode to base32
-            suffix (base32/encode uuid-bytes)
-            ;; Combine prefix + suffix
-            typeid-str (util/join-typeid prefix suffix)]
-        typeid-str))))
+               (:error prefix-validation))))
+    ;; Generate UUIDv7
+    (let [uuid-bytes (uuid/generate-uuidv7)
+          ;; Encode to base32
+          suffix (base32/encode uuid-bytes)
+          ;; Combine prefix + suffix
+          typeid-str (util/join-typeid prefix suffix)]
+      typeid-str)))
 
 ;; T030: Parse function
 (defn parse
   "Parse a TypeID string into its components.
 
-   Returns a map with:
+   Returns {:ok parsed-map} on success, {:error error-map} on failure.
+
+   The parsed-map contains:
    - :prefix   Type prefix (empty string if none)
    - :suffix   26-character base32 suffix
    - :uuid     16-byte UUID (decoded from suffix)
@@ -59,58 +61,110 @@
 
    Example:
      (parse \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> {:prefix \"user\"
-     ;;    :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
-     ;;    :uuid #bytes[...]
-     ;;    :typeid \"user_01h5fskfsk4fpeqwnsyz5hj55t\"}
+     ;;=> {:ok {:prefix \"user\"
+     ;;         :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
+     ;;         :uuid #bytes[...]
+     ;;         :typeid \"user_01h5fskfsk4fpeqwnsyz5hj55t\"}}
 
-     (parse \"01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> {:prefix \"\"
-     ;;    :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
-     ;;    :uuid #bytes[...]
-     ;;    :typeid \"01h5fskfsk4fpeqwnsyz5hj55t\"}
-
-   Throws ex-info if TypeID string is invalid.
+     (parse \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
+     ;;=> {:error {:type :invalid-case
+     ;;            :message \"...\"
+     ;;            :data {...}}}
 
    See also: `generate`, `validate`"
   [typeid-str]
   ;; Basic string validation
-  (when-not (string? typeid-str)
-    (throw (ex-info "TypeID must be a string"
-             {:type :invalid-typeid-type
-              :value typeid-str
-              :value-type (type typeid-str)})))
+  (cond
+    (not (string? typeid-str))
+    {:error {:type :invalid-typeid-type
+             :message "TypeID must be a string"
+             :data {:value typeid-str
+                    :value-type (type typeid-str)}}}
 
-  ;; Check length
-  (when-not (<= 26 (count typeid-str) 90)
-    (throw (ex-info "TypeID must be 26-90 characters"
-             {:type :invalid-length
-              :typeid typeid-str
-              :length (count typeid-str)})))
+    (not (<= 26 (count typeid-str) 90))
+    {:error {:type :invalid-length
+             :message "TypeID must be 26-90 characters"
+             :data {:typeid typeid-str
+                    :length (count typeid-str)}}}
 
-  ;; Check lowercase
-  (when-not (= typeid-str (clojure.string/lower-case typeid-str))
-    (throw (ex-info "TypeID must be all lowercase"
-             {:type :invalid-case
-              :typeid typeid-str})))
+    (not (= typeid-str (clojure.string/lower-case typeid-str)))
+    {:error {:type :invalid-case
+             :message "TypeID must be all lowercase"
+             :data {:typeid typeid-str}}}
 
-  ;; Split into prefix and suffix
-  (let [[prefix suffix] (util/split-typeid typeid-str)]
-    ;; Validate prefix
-    (let [prefix-validation (v/validate-prefix prefix)]
-      (when (:error prefix-validation)
-        (throw (ex-info (:message (:error prefix-validation))
-                 (:error prefix-validation)))))
+    :else
+    ;; Split into prefix and suffix
+    (let [[prefix suffix] (util/split-typeid typeid-str)]
+      ;; Validate prefix
+      (let [prefix-validation (v/validate-prefix prefix)]
+        (if (:error prefix-validation)
+          prefix-validation
+          ;; Validate suffix format
+          (if-not (v/valid-base32-suffix? suffix)
+            {:error {:type :invalid-suffix
+                     :message "Invalid TypeID suffix format"
+                     :data {:suffix suffix}}}
+            ;; Decode suffix to UUID
+            (try
+              (let [uuid-bytes (base32/decode suffix)]
+                {:ok {:prefix prefix
+                      :suffix suffix
+                      :uuid uuid-bytes
+                      :typeid typeid-str}})
+              (catch #?(:clj Exception :cljs js/Error) e
+                {:error {:type :decode-error
+                         :message (str "Failed to decode suffix: " #?(:clj (.getMessage e) :cljs (.-message e)))
+                         :data {:suffix suffix}}}))))))))
 
-    ;; Validate suffix format
-    (when-not (v/valid-base32-suffix? suffix)
-      (throw (ex-info "Invalid TypeID suffix"
-               {:type :invalid-suffix
-                :suffix suffix})))
+;; T037: Validate function (User Story 2)
+(defn validate
+  "Validate a TypeID string without parsing it (faster check).
 
-    ;; Decode suffix to UUID
-    (let [uuid-bytes (base32/decode suffix)]
-      {:prefix prefix
-       :suffix suffix
-       :uuid uuid-bytes
-       :typeid typeid-str})))
+   Returns {:ok true} on success, {:error error-map} on failure.
+
+   This function validates format without decoding the UUID, making it
+   lighter weight than `parse`.
+
+   Example:
+     (validate \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+     ;;=> {:ok true}
+
+     (validate \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
+     ;;=> {:error {:type :invalid-case
+     ;;            :message \"...\"
+     ;;            :data {...}}}
+
+   See also: `parse`, `generate`"
+  [typeid-str]
+  ;; Basic string validation - same as parse but without decoding
+  (cond
+    (not (string? typeid-str))
+    {:error {:type :invalid-typeid-type
+             :message "TypeID must be a string"
+             :data {:value typeid-str
+                    :value-type (type typeid-str)}}}
+
+    (not (<= 26 (count typeid-str) 90))
+    {:error {:type :invalid-length
+             :message "TypeID must be 26-90 characters"
+             :data {:typeid typeid-str
+                    :length (count typeid-str)}}}
+
+    (not (= typeid-str (clojure.string/lower-case typeid-str)))
+    {:error {:type :invalid-case
+             :message "TypeID must be all lowercase"
+             :data {:typeid typeid-str}}}
+
+    :else
+    ;; Split into prefix and suffix
+    (let [[prefix suffix] (util/split-typeid typeid-str)]
+      ;; Validate prefix
+      (let [prefix-validation (v/validate-prefix prefix)]
+        (if (:error prefix-validation)
+          prefix-validation
+          ;; Validate suffix format (but don't decode)
+          (if-not (v/valid-base32-suffix? suffix)
+            {:error {:type :invalid-suffix
+                     :message "Invalid TypeID suffix format"
+                     :data {:suffix suffix}}}
+            {:ok true}))))))

@@ -87,7 +87,7 @@ Single library project structure:
 - [X] T029 [US1] Implement typeid.core/generate function in src/typeid/core.cljc per contracts/api.md:16-75
 - [X] T030 [US1] Implement typeid.core/parse function in src/typeid/core.cljc per contracts/api.md:78-146
 - [X] T031 [US1] Add comprehensive docstrings with examples to generate and parse functions per research.md:608-679
-- [ ] T032 [US1] Implement error-as-data pattern {:ok result} or {:error error-map} for both functions per data-model.md:296-323
+- [X] T032 [US1] Implement error-as-data pattern {:ok result} or {:error error-map} for both functions per data-model.md:296-323
 - [X] T033 [US1] Add namespace-level docstring to src/typeid/core.cljc explaining library purpose and usage
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - can generate and parse TypeIDs independently
@@ -102,16 +102,16 @@ Single library project structure:
 
 ### Tests for User Story 2
 
-- [ ] T034 [P] [US2] Create validation unit tests in test/typeid/core_test.cljc covering all error types per contracts/api.md:148-199
-- [ ] T035 [P] [US2] Create error semantics test suite in test/typeid/error_semantics_test.cljc per research.md:416-486
-- [ ] T036 [P] [US2] Add edge case tests (63-char prefix, consecutive underscores, boundary chars) in test/typeid/core_test.cljc
+- [X] T034 [P] [US2] Create validation unit tests in test/typeid/core_test.cljc covering all error types per contracts/api.md:148-199
+- [X] T035 [P] [US2] Create error semantics test suite in test/typeid/error_semantics_test.cljc per research.md:416-486
+- [X] T036 [P] [US2] Add edge case tests (63-char prefix, consecutive underscores, boundary chars) in test/typeid/core_test.cljc
 
 ### Implementation for User Story 2
 
-- [ ] T037 [US2] Implement typeid.core/validate function in src/typeid/core.cljc per contracts/api.md:148-199
-- [ ] T038 [US2] Ensure all validation errors include :type, :message, :data keys per data-model.md:296-323
-- [ ] T039 [US2] Add docstring with validation examples to validate function per contracts/api.md:180-199
-- [ ] T040 [US2] Implement predicate functions in typeid.validation namespace (valid-prefix?, valid-typeid-string?, etc.)
+- [X] T037 [US2] Implement typeid.core/validate function in src/typeid/core.cljc per contracts/api.md:148-199
+- [X] T038 [US2] Ensure all validation errors include :type, :message, :data keys per data-model.md:296-323
+- [X] T039 [US2] Add docstring with validation examples to validate function per contracts/api.md:180-199
+- [X] T040 [US2] Implement predicate functions in typeid.validation namespace (valid-prefix?, valid-typeid-string?, etc.)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - can generate, parse, and validate
 
