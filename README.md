@@ -181,7 +181,47 @@ Zero reflection warnings. All hot paths use type hints.
 
 ## Development
 
-### Running Tests
+### Babashka Tasks (Recommended)
+
+This project includes [Babashka](https://babashka.org/) tasks for common development workflows:
+
+```bash
+# Show all available tasks
+bb tasks
+
+# Show project information
+bb info
+
+# Testing
+bb test              # Run all JVM tests
+bb test:watch        # Run tests in watch mode
+bb test:cljs         # Run ClojureScript tests
+bb test:coverage     # Run with coverage report
+
+# Code quality
+bb lint              # Run clj-kondo
+bb format            # Format code with cljfmt
+bb quality           # Run all quality checks
+
+# Performance
+bb bench             # Run benchmarks
+
+# Build
+bb build             # Clean and build JAR
+bb install           # Install to local Maven repo
+
+# Documentation
+bb docs              # Generate Codox docs
+
+# CI workflows
+bb ci:check          # Run all CI checks
+bb release:check     # Verify release readiness
+
+# Deploy
+bb deploy            # Deploy to Clojars
+```
+
+### Manual Commands (Without Babashka)
 
 ```bash
 # JVM tests
@@ -193,32 +233,16 @@ clojure -M:test:cljs -m kaocha.runner :unit-cljs
 
 # Test coverage
 clojure -M:test:coverage
-```
 
-### Linting and Formatting
-
-```bash
-# Run clj-kondo
+# Linting and formatting
 clojure -M:lint
-
-# Format code with cljfmt
 clojure -M:dev -m cljfmt.main fix src test
-```
 
-### Benchmarks
-
-```bash
+# Benchmarks
 clojure -M:dev -m benchmarks.core-bench
-```
 
-### REPL Development
-
-```bash
-# Start nREPL server
+# REPL
 clojure -M:nrepl
-
-# Or use the helper command
-./start-nrepl.sh
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development setup instructions.

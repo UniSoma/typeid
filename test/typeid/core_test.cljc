@@ -120,6 +120,7 @@
       (is (some? error))
       (is (= :invalid-suffix (:type error)))))
 
+  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
     (let [{:keys [ok error]} (t/parse 12345)]
       (is (nil? ok))
@@ -194,6 +195,7 @@
       (is (some? error))
       (is (= :invalid-suffix (:type error)))))
 
+  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
     (let [{:keys [ok error]} (t/validate 12345)]
       (is (nil? ok))

@@ -9,14 +9,11 @@
      user=> (refresh)  ; Reload changed namespaces
      user=> (test-all) ; Run all tests
      user=> (bench)    ; Run benchmarks"
-  (:require [clojure.pprint :refer [pprint]]
-    [clojure.repl :refer [doc source apropos dir]]
+  (:require
     [clojure.string :as str]
     [clojure.tools.namespace.repl :refer [refresh]]
     [typeid.core :as typeid]
-    [typeid.impl.base32 :as base32]
-    [typeid.impl.uuid :as uuid]
-    [typeid.validation :as v]))
+    [typeid.impl.uuid :as uuid]))
 
 ;; ============================================================================
 ;; REPL Utilities
@@ -134,8 +131,8 @@
   (into {}
     (map (fn [prefix]
            (let [result (typeid/generate prefix)
-                 key (if (str/blank? prefix) :no-prefix (keyword prefix))]
-             [key (:ok result)]))
+                 k (if (str/blank? prefix) :no-prefix (keyword prefix))]
+             [k (:ok result)]))
       sample-prefixes)))
 
 ;; ============================================================================

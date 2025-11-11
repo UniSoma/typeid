@@ -1,0 +1,272 @@
+{:paths ["scripts"]
+
+ :tasks
+ {;; ============================================================================
+  ;; Testing
+  ;; ============================================================================
+
+  test
+  {:doc "Run all JVM tests"
+   :task (shell "clojure -M:test -m kaocha.runner")}
+
+  test:watch
+  {:doc "Run tests in watch mode"
+   :task (shell "clojure -M:test -m kaocha.runner --watch")}
+
+  test:cljs
+  {:doc "Run ClojureScript tests (requires Node.js)"
+   :task (shell "clojure -M:test:cljs -m kaocha.runner :unit-cljs")}
+
+  test:coverage
+  {:doc "Run tests with coverage report (requires 80% minimum)"
+   :task (shell "clojure -M:test:coverage")}
+
+  test:all
+  {:doc "Run all tests (JVM + ClojureScript)"
+   :depends [test test:cljs]}
+
+  ;; ============================================================================
+  ;; Code Quality
+  ;; ============================================================================
+
+  lint
+  {:doc "Run clj-kondo linting"
+   :task (shell "clojure -M:lint")}
+
+  format
+  {:doc "Format code with cljfmt"
+   :task (shell "clojure -M:dev -m cljfmt.main fix src test dev")}
+
+  format:check
+  {:doc "Check code formatting without fixing"
+   :task (shell "clojure -M:dev -m cljfmt.main check src test dev")}
+
+  quality
+  {:doc "Run all quality checks (lint + format check)"
+   :depends [lint format:check]}
+
+  ;; ============================================================================
+  ;; Performance
+  ;; ============================================================================
+
+  bench
+  {:doc "Run performance benchmarks"
+   :task (shell "clojure -M:dev -m benchmarks.core-bench")}
+
+  ;; ============================================================================
+  ;; Documentation
+  ;; ============================================================================
+
+  docs
+  {:doc "Generate Codox API documentation"
+   :task (shell "clojure -X:codox")}
+
+  docs:clean
+  {:doc "Remove generated documentation"
+   :task (shell "rm -rf docs")}
+
+  docs:regenerate
+  {:doc "Clean and regenerate documentation"
+   :depends [docs:clean docs]}
+
+  ;; ============================================================================
+  ;; Build
+  ;; ============================================================================
+
+  clean
+  {:doc "Remove build artifacts"
+   :task (shell "clojure -T:build clean")}
+
+  jar
+  {:doc "Build library JAR"
+   :task (shell "clojure -T:build jar")}
+
+  install
+  {:doc "Install JAR to local Maven repository (~/.m2)"
+   :task (shell "clojure -T:build install")}
+
+  pom
+  {:doc "Generate pom.xml"
+   :task (shell "clojure -T:build pom")}
+
+  build
+  {:doc "Clean and build JAR"
+   :depends [clean jar]}
+
+  ;; ============================================================================
+  ;; Deployment
+  ;; ============================================================================
+
+  deploy
+  {:doc "Deploy to Clojars (requires CLOJARS_USERNAME and CLOJARS_PASSWORD)"
+   :task (shell "clojure -T:build deploy")}
+
+  deploy:unsigned
+  {:doc "Deploy to Clojars without GPG signing"
+   :task (shell "clojure -T:build deploy '{:sign false}'")}
+
+  ;; ============================================================================
+  ;; REPL
+  ;; ============================================================================
+
+  repl
+  {:doc "Start nREPL server with dev utilities"
+   :task (shell "clojure -M:dev:nrepl")}
+
+  repl:headless
+  {:doc "Start headless nREPL server"
+   :task (shell "clojure -M:nrepl")}
+
+  ;; ============================================================================
+  ;; CI/CD Workflows
+  ;; ============================================================================
+
+  ci:check
+  {:doc "Run all CI checks (tests + quality)"
+   :task (do
+           (println "Running CI checks...")
+           (println "\n[1/3] Running tests...")
+           (shell "clojure -M:test -m kaocha.runner")
+           (println "\n[2/3] Running linter...")
+           (shell "clojure -M:lint")
+           (println "\n[3/3] Checking formatting...")
+           (shell "clojure -M:dev -m cljfmt.main check src test dev")
+           (println "\n✅ All CI checks passed!"))}
+
+  ci:full
+  {:doc "Full CI suite (JVM tests + ClojureScript tests + quality)"
+   :task (do
+           (println "Running full CI suite...")
+           (println "\n[1/4] Running JVM tests...")
+           (shell "clojure -M:test -m kaocha.runner")
+           (println "\n[2/4] Running ClojureScript tests...")
+           (shell "clojure -M:test:cljs -m kaocha.runner :unit-cljs")
+           (println "\n[3/4] Running linter...")
+           (shell "clojure -M:lint")
+           (println "\n[4/4] Checking formatting...")
+           (shell "clojure -M:dev -m cljfmt.main check src test dev")
+           (println "\n✅ All checks passed!"))}
+
+  ;; ============================================================================
+  ;; Release Workflow
+  ;; ============================================================================
+
+  release:check
+  {:doc "Verify project is ready for release"
+   :task (do
+           (println "Checking release readiness...")
+           (println "\n[1/5] Running all tests...")
+           (shell "clojure -M:test -m kaocha.runner")
+           (println "\n[2/5] Checking code quality...")
+           (shell "clojure -M:lint")
+           (println "\n[3/5] Checking formatting...")
+           (shell "clojure -M:dev -m cljfmt.main check src test dev")
+           (println "\n[4/5] Running benchmarks...")
+           (shell "clojure -M:dev -m benchmarks.core-bench")
+           (println "\n[5/5] Building JAR...")
+           (shell "clojure -T:build jar")
+           (println "\n✅ Project is ready for release!"))}
+
+  release:prepare
+  {:doc "Prepare for release (clean + build + install locally)"
+   :task (do
+           (println "Preparing release...")
+           (shell "clojure -T:build clean")
+           (shell "clojure -T:build jar")
+           (shell "clojure -T:build install")
+           (println "\n✅ Release prepared and installed to ~/.m2")
+           (println "To deploy to Clojars: bb deploy"))}
+
+  ;; ============================================================================
+  ;; Development Utilities
+  ;; ============================================================================
+
+  tree
+  {:doc "Show project file structure"
+   :task (shell "tree -I 'target|node_modules|.git|.cpcache|.clj-kondo/.cache|docs' -L 3")}
+
+  outdated
+  {:doc "Check for outdated dependencies"
+   :task (shell "clojure -M:outdated")}
+
+  classpath
+  {:doc "Show the classpath"
+   :task (shell "clojure -Spath")}
+
+  ;; ============================================================================
+  ;; Quick Commands
+  ;; ============================================================================
+
+  quick:test
+  {:doc "Quick test run (skip long-running tests)"
+   :task (shell "clojure -M:test -m kaocha.runner --skip-meta :slow")}
+
+  quick:check
+  {:doc "Quick quality check (lint only, no tests)"
+   :depends [lint]}
+
+  ;; ============================================================================
+  ;; Info
+  ;; ============================================================================
+
+  info
+  {:doc "Show project information"
+   :task (do
+           (println "╔══════════════════════════════════════════════════════════════╗")
+           (println "║                                                              ║")
+           (println "║  TypeID for Clojure                                          ║")
+           (println "║  Type-safe, K-sortable unique identifiers                   ║")
+           (println "║                                                              ║")
+           (println "╚══════════════════════════════════════════════════════════════╝")
+           (println)
+           (println "Artifact:     unisoma.agilis/typeid")
+           (println "Version:      0.1.0")
+           (println "Repository:   https://github.com/UniSoma/typeid")
+           (println "Clojars:      https://clojars.org/unisoma.agilis/typeid")
+           (println "API Docs:     https://unisoma.github.io/typeid/")
+           (println)
+           (println "Common commands:")
+           (println "  bb test              Run all JVM tests")
+           (println "  bb lint              Run clj-kondo")
+           (println "  bb format            Format code")
+           (println "  bb bench             Run benchmarks")
+           (println "  bb ci:check          Run all CI checks")
+           (println "  bb release:check     Verify release readiness")
+           (println "  bb build             Build JAR")
+           (println "  bb deploy            Deploy to Clojars")
+           (println)
+           (println "Run 'bb tasks' to see all available commands"))}
+
+  ;; ============================================================================
+  ;; Git Helpers
+  ;; ============================================================================
+
+  git:status
+  {:doc "Show git status with helpful context"
+   :task (shell "git status")}
+
+  git:diff
+  {:doc "Show uncommitted changes"
+   :task (shell "git diff")}
+
+  git:branches
+  {:doc "Show all branches"
+   :task (shell "git branch -a")}
+
+  ;; ============================================================================
+  ;; Setup
+  ;; ============================================================================
+
+  setup
+  {:doc "Initial project setup (install Node.js deps)"
+   :task (do
+           (println "Setting up TypeID development environment...")
+           (println "\n[1/2] Installing Node.js dependencies...")
+           (shell "npm install")
+           (println "\n[2/2] Verifying setup...")
+           (shell "clojure -M:test -m kaocha.runner --version")
+           (println "\n✅ Setup complete!")
+           (println "\nNext steps:")
+           (println "  bb repl      Start REPL with dev utilities")
+           (println "  bb test      Run tests")
+           (println "  bb info      Show project info"))}}}

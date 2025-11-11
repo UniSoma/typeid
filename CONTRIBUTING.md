@@ -26,6 +26,7 @@ This project adheres to a code of conduct that promotes respect, inclusivity, an
 - **Clojure CLI** (version 1.11+)
 - **Node.js 15+** (for ClojureScript tests)
 - **Git**
+- **Babashka** (optional but recommended) - [Install instructions](https://babashka.org/)
 
 ### Fork and Clone
 
@@ -45,11 +46,12 @@ This project adheres to a code of conduct that promotes respect, inclusivity, an
 ### Install Dependencies
 
 ```bash
-# Install Node.js dependencies for ClojureScript tests
-npm install
+# Quick setup with Babashka (recommended)
+bb setup
 
-# Verify setup by running tests
-clojure -M:test -m kaocha.runner
+# Or manually:
+npm install                              # Install Node.js dependencies
+clojure -M:test -m kaocha.runner         # Verify setup by running tests
 ```
 
 ### Start a REPL
@@ -109,7 +111,7 @@ Use descriptive branch names:
 - Write code following the [Code Quality Standards](#code-quality-standards)
 - Add tests for new functionality
 - Update documentation as needed
-- Run tests frequently: `clojure -M:test -m kaocha.runner`
+- Run tests frequently: `bb test` (or `clojure -M:test -m kaocha.runner`)
 
 ### 3. Commit Changes
 
@@ -186,18 +188,23 @@ Then create a pull request on GitHub.
 
 ### Running Tests
 
+**With Babashka (recommended):**
+
 ```bash
-# Run all JVM tests
-clojure -M:test -m kaocha.runner
+bb test              # Run all JVM tests
+bb test:cljs         # Run ClojureScript tests
+bb test:coverage     # Run with coverage report
+bb test:watch        # Watch mode (run tests on file changes)
+bb test:all          # Run both JVM and ClojureScript tests
+```
 
-# Run ClojureScript tests
-clojure -M:test:cljs -m kaocha.runner :unit-cljs
+**Without Babashka:**
 
-# Run tests with coverage
-clojure -M:test:coverage
-
-# Watch mode (run tests on file changes)
-clojure -M:test -m kaocha.runner --watch
+```bash
+clojure -M:test -m kaocha.runner                    # JVM tests
+clojure -M:test:cljs -m kaocha.runner :unit-cljs    # ClojureScript tests
+clojure -M:test:coverage                            # With coverage
+clojure -M:test -m kaocha.runner --watch            # Watch mode
 ```
 
 ### Writing Tests
@@ -232,7 +239,8 @@ All changes must pass the official TypeID specification compliance tests:
 Run linting before committing:
 
 ```bash
-clojure -M:lint
+bb lint              # With Babashka
+clojure -M:lint      # Without Babashka
 ```
 
 **Zero-tolerance policy**: No warnings or errors allowed. Fix all issues before submitting.
@@ -242,7 +250,15 @@ clojure -M:lint
 Format code before committing:
 
 ```bash
-clojure -M:dev -m cljfmt.main fix src test dev
+bb format            # With Babashka
+clojure -M:dev -m cljfmt.main fix src test dev    # Without Babashka
+```
+
+### All Quality Checks
+
+```bash
+bb quality           # Run lint + format check
+bb ci:check          # Full CI suite (tests + quality)
 ```
 
 ## Pull Request Process
@@ -283,7 +299,8 @@ clojure -M:dev -m cljfmt.main fix src test dev
 ### Running Benchmarks
 
 ```bash
-clojure -M:dev -m benchmarks.core-bench
+bb bench                                  # With Babashka
+clojure -M:dev -m benchmarks.core-bench   # Without Babashka
 ```
 
 ### Performance Targets

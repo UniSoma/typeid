@@ -7,6 +7,7 @@
 
 ;; T035: Error semantics test suite
 
+#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-structure-test
   (testing "All validation errors return consistent structure"
     (let [errors [(v/validate-prefix "User123")      ; uppercase
@@ -28,6 +29,7 @@
         (is (contains? (:error result) :data) "Error should have :data")
         (is (map? (:data (:error result))) "Error :data should be map")))))
 
+#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-types-test
   (testing "Specific error types are returned for each validation failure"
     ;; Prefix validation errors
@@ -73,6 +75,7 @@
           (:type (:error (t/validate "user_tooshort"))))
       "Validate: short TypeID should return :invalid-length")))
 
+#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-data-completeness-test
   (testing "Error data includes relevant debugging information"
     ;; Prefix errors
