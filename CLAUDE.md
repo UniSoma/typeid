@@ -26,4 +26,37 @@ Clojure 1.11+ (JVM) and ClojureScript (JS target); CI matrix testing Clojure 1.1
 - 001-typeid-implementation: Added Clojure 1.11+ (JVM) and ClojureScript (JS target); CI matrix testing Clojure 1.11/1.12 on JDK 17/21
 
 <!-- MANUAL ADDITIONS START -->
+
+## REPL and nREPL Server
+
+### Starting the nREPL Server
+
+To start an nREPL server in headless mode (for programmatic access):
+
+```bash
+clojure -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.4.0"}}}' -M -m nrepl.cmdline --host 127.0.0.1
+```
+
+This will:
+- Start the nREPL server on an auto-assigned port
+- Bind to localhost (127.0.0.1)
+- Run in headless mode (no interactive REPL)
+- Output the port number to stdout
+
+### Testing the Connection
+
+After starting the server, test it with:
+
+```bash
+clj-nrepl-eval -p <PORT> "(+ 1 2 3)"
+```
+
+### Checking Active Connections
+
+To see all active nREPL connections:
+
+```bash
+clj-nrepl-eval --connected-ports
+```
+
 <!-- MANUAL ADDITIONS END -->
