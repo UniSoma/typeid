@@ -32,7 +32,7 @@ Add to your `deps.edn`:
 
 ```clojure
 {:deps
- {com.example/typeid {:mvn/version "0.1.0"}}}
+ {com.github.jonasrodrigues/typeid {:mvn/version "0.1.0"}}}
 ```
 
 ### Leiningen (project.clj)
@@ -40,7 +40,7 @@ Add to your `deps.edn`:
 Add to your `project.clj`:
 
 ```clojure
-:dependencies [[com.example/typeid "0.1.0"]]
+:dependencies [[com.github.jonasrodrigues/typeid "0.1.0"]]
 ```
 
 ### ClojureScript

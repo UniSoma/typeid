@@ -174,7 +174,7 @@ Single library project structure:
 - [X] T066 [P] Benchmark base32/decode (target: <1μs)
 - [X] T067 [P] Benchmark prefix validation (target: <500ns)
 - [X] T068 Verify zero reflection warnings in benchmark output per research.md:224-240
-- [ ] T069 Add benchmark results to README performance section per research.md:826-834
+- [X] T069 Add benchmark results to README performance section per research.md:826-834
 
 **Checkpoint**: Performance targets met and documented
 
@@ -184,18 +184,18 @@ Single library project structure:
 
 **Purpose**: Complete user-facing documentation and final quality improvements
 
-- [ ] T070 [P] Create README.md following outline in research.md:719-888
-- [ ] T071 [P] Add installation instructions for deps.edn and Leiningen to README.md
-- [ ] T072 [P] Add quick start examples for all three user stories to README.md
-- [ ] T073 [P] Add troubleshooting section with common errors to README.md per research.md:847-871
-- [ ] T074 [P] Add comparison table (TypeID vs UUID vs ULID vs Nano ID) to README.md per research.md:836-845
-- [ ] T075 [P] Generate Codox documentation with clojure -X:codox
-- [ ] T076 [P] Create dev/user.clj with REPL utilities for development
-- [ ] T077 [P] Create CONTRIBUTING.md with development setup instructions
-- [ ] T078 [P] Verify quickstart.md examples are executable and correct
-- [ ] T079 [P] Add code coverage badge to README.md
-- [ ] T080 [P] Add CI status badge to README.md
-- [ ] T081 Update CHANGELOG.md with release notes for version 0.1.0
+- [X] T070 [P] Create README.md following outline in research.md:719-888
+- [X] T071 [P] Add installation instructions for deps.edn and Leiningen to README.md
+- [X] T072 [P] Add quick start examples for all three user stories to README.md
+- [X] T073 [P] Add troubleshooting section with common errors to README.md per research.md:847-871
+- [X] T074 [P] Add comparison table (TypeID vs UUID vs ULID vs Nano ID) to README.md per research.md:836-845
+- [X] T075 [P] Generate Codox documentation with clojure -X:codox
+- [X] T076 [P] Create dev/user.clj with REPL utilities for development
+- [X] T077 [P] Create CONTRIBUTING.md with development setup instructions
+- [X] T078 [P] Verify quickstart.md examples are executable and correct
+- [X] T079 [P] Add code coverage badge to README.md
+- [X] T080 [P] Add CI status badge to README.md
+- [X] T081 Update CHANGELOG.md with release notes for version 0.1.0
 
 **Checkpoint**: Library ready for initial release
 
