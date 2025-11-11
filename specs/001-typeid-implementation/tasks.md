@@ -153,12 +153,12 @@ Single library project structure:
 - [X] T054 [US1] Implement valid.yml test cases (decode TypeID → expected UUID) in test/typeid/compliance_test.cljc
 - [X] T055 [US2] Implement invalid.yml test cases (reject with appropriate errors) in test/typeid/compliance_test.cljc
 - [X] T056 [P] Run clj-kondo on all source and test files, fix critical warnings
-- [ ] T057 [P] Run cljfmt on all source and test files, ensure consistent formatting
-- [ ] T058 [P] Verify all public functions have docstrings with examples
-- [ ] T059 Run test suite on JVM (Clojure 1.11 and 1.12, JDK 17 and 21)
-- [ ] T060 Run test suite on ClojureScript (Node.js 18 and 20)
-- [ ] T061 [P] Verify test coverage ≥80% overall using cloverage per research.md:510-532
-- [ ] T062 [P] Verify 100% coverage for base32/encode, base32/decode, uuid/generate-uuidv7, validation predicates
+- [X] T057 [P] Run cljfmt on all source and test files, ensure consistent formatting
+- [X] T058 [P] Verify all public functions have docstrings with examples
+- [X] T059 Run test suite on JVM (Clojure 1.11 and 1.12, JDK 17 and 21)
+- [X] T060 Run test suite on ClojureScript (Node.js 18 and 20)
+- [X] T061 [P] Verify test coverage ≥80% overall using cloverage per research.md:510-532
+- [X] T062 [P] Verify 100% coverage for base32/encode, base32/decode, uuid/generate-uuidv7, validation predicates
 
 **Checkpoint**: Library passes all compliance tests and quality gates
 

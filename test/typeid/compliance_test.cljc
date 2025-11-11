@@ -7,7 +7,7 @@
     [clojure.test :refer [deftest is testing]]
     [typeid.core :as t]))
 
-(set! *warn-on-reflection* true)
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; T052: Load and parse YAML test files
 
