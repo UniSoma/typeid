@@ -50,16 +50,16 @@ Single library project structure:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T013 [P] Implement base32 encode alphabet in src/typeid/impl/base32.cljc per data-model.md:186-209
-- [ ] T014 [P] Implement base32 decode map in src/typeid/impl/base32.cljc per data-model.md:186-209
-- [ ] T015 Implement base32/encode function (UUID bytes → 26-char string) in src/typeid/impl/base32.cljc with type hints per research.md:125-268
-- [ ] T016 Implement base32/decode function (26-char string → UUID bytes) in src/typeid/impl/base32.cljc with type hints per research.md:125-268
-- [ ] T017 [P] Implement prefix validation predicates in src/typeid/validation.cljc per research.md:284-366
-- [ ] T018 [P] Implement TypeID string validation predicates in src/typeid/validation.cljc per data-model.md:52-59
-- [ ] T019 [P] Implement UUID bytes validation predicates in src/typeid/validation.cljc per data-model.md:166-180
-- [ ] T020 Implement UUIDv7 generation in src/typeid/impl/uuid.cljc with reader conditionals for JVM/JS per research.md:49-122
-- [ ] T021 [P] Create shared utility functions in src/typeid/impl/util.cljc (string splitting, bit manipulation helpers)
-- [ ] T022 Add (set! *warn-on-reflection* true) to all src namespaces per research.md:125-268
+- [X] T013 [P] Implement base32 encode alphabet in src/typeid/impl/base32.cljc per data-model.md:186-209
+- [X] T014 [P] Implement base32 decode map in src/typeid/impl/base32.cljc per data-model.md:186-209
+- [X] T015 Implement base32/encode function (UUID bytes → 26-char string) in src/typeid/impl/base32.cljc with type hints per research.md:125-268
+- [X] T016 Implement base32/decode function (26-char string → UUID bytes) in src/typeid/impl/base32.cljc with type hints per research.md:125-268
+- [X] T017 [P] Implement prefix validation predicates in src/typeid/validation.cljc per research.md:284-366
+- [X] T018 [P] Implement TypeID string validation predicates in src/typeid/validation.cljc per data-model.md:52-59
+- [X] T019 [P] Implement UUID bytes validation predicates in src/typeid/validation.cljc per data-model.md:166-180
+- [X] T020 Implement UUIDv7 generation in src/typeid/impl/uuid.cljc with reader conditionals for JVM/JS per research.md:49-122
+- [X] T021 [P] Create shared utility functions in src/typeid/impl/util.cljc (string splitting, bit manipulation helpers)
+- [X] T022 Add (set! *warn-on-reflection* true) to all src namespaces per research.md:125-268
 
 **Checkpoint**: Foundation ready - base32 encoding, UUID generation, validation all working
 
@@ -75,20 +75,20 @@ Single library project structure:
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T023 [P] [US1] Create unit test for generate function in test/typeid/core_test.cljc with valid/invalid prefix cases
-- [ ] T024 [P] [US1] Create unit test for parse function in test/typeid/core_test.cljc with valid/invalid TypeID strings
+- [X] T023 [P] [US1] Create unit test for generate function in test/typeid/core_test.cljc with valid/invalid prefix cases
+- [X] T024 [P] [US1] Create unit test for parse function in test/typeid/core_test.cljc with valid/invalid TypeID strings
 - [ ] T025 [P] [US1] Create property-based tests for generate→parse round-trip in test/typeid/properties_test.cljc per research.md:410-508
-- [ ] T026 [P] [US1] Create base32 encoding unit tests in test/typeid/impl/base32_test.cljc
-- [ ] T027 [P] [US1] Create UUIDv7 generation tests in test/typeid/impl/uuid_test.cljc
-- [ ] T028 [P] [US1] Create prefix validation unit tests in test/typeid/impl/prefix_test.cljc
+- [X] T026 [P] [US1] Create base32 encoding unit tests in test/typeid/impl/base32_test.cljc
+- [X] T027 [P] [US1] Create UUIDv7 generation tests in test/typeid/impl/uuid_test.cljc
+- [X] T028 [P] [US1] Create validation unit tests in test/typeid/validation_test.cljc
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] Implement typeid.core/generate function in src/typeid/core.cljc per contracts/api.md:16-75
-- [ ] T030 [US1] Implement typeid.core/parse function in src/typeid/core.cljc per contracts/api.md:78-146
-- [ ] T031 [US1] Add comprehensive docstrings with examples to generate and parse functions per research.md:608-679
+- [X] T029 [US1] Implement typeid.core/generate function in src/typeid/core.cljc per contracts/api.md:16-75
+- [X] T030 [US1] Implement typeid.core/parse function in src/typeid/core.cljc per contracts/api.md:78-146
+- [X] T031 [US1] Add comprehensive docstrings with examples to generate and parse functions per research.md:608-679
 - [ ] T032 [US1] Implement error-as-data pattern {:ok result} or {:error error-map} for both functions per data-model.md:296-323
-- [ ] T033 [US1] Add namespace-level docstring to src/typeid/core.cljc explaining library purpose and usage
+- [X] T033 [US1] Add namespace-level docstring to src/typeid/core.cljc explaining library purpose and usage
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - can generate and parse TypeIDs independently
 
