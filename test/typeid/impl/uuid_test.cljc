@@ -7,10 +7,10 @@
 
 (deftest generate-uuidv7-basic-test
   (testing "Generate UUIDv7 returns 16 bytes"
-    (let [uuid (uuid/generate-uuidv7)]
-      (is (v/valid-uuid-bytes? uuid))
-      (is (= 16 #?(:clj (alength uuid)
-                   :cljs (.-length uuid))))))
+    (let [uuid-bytes (uuid/generate-uuidv7)]
+      (is (v/valid-uuid-bytes? uuid-bytes))
+      (is (= 16 #?(:clj (alength uuid-bytes)
+                   :cljs (.-length uuid-bytes))))))
 
   (testing "Generate multiple UUIDs are unique"
     (let [uuids (repeatedly 100 uuid/generate-uuidv7)]
@@ -20,18 +20,18 @@
 
 (deftest generate-uuidv7-version-test
   (testing "Generated UUID has version 7"
-    (let [uuid (uuid/generate-uuidv7)
+    (let [uuid-bytes (uuid/generate-uuidv7)
           ;; Version is in bits 48-51 (byte 6, high nibble)
-          version-byte (aget uuid 6)
+          version-byte (aget uuid-bytes 6)
           version (bit-and (bit-shift-right version-byte 4) 0x0F)]
       (is (= 7 version)
         (str "UUID version should be 7, got: " version))))
 
   (testing "Generated UUID has correct variant"
-    (let [uuid (uuid/generate-uuidv7)
+    (let [uuid-bytes (uuid/generate-uuidv7)
           ;; Variant is in bits 64-65 (byte 8, high 2 bits)
           ;; Mask to unsigned byte first
-          variant-byte (bit-and (aget uuid 8) 0xFF)
+          variant-byte (bit-and (aget uuid-bytes 8) 0xFF)
           variant (bit-and (bit-shift-right variant-byte 6) 0x03)]
       (is (= 2 variant)
         (str "UUID variant should be 2 (10 in binary), got: " variant)))))
@@ -40,11 +40,11 @@
   (testing "UUID timestamp is recent"
     (let [before-ms #?(:clj (System/currentTimeMillis)
                        :cljs (.now js/Date))
-          uuid (uuid/generate-uuidv7)
+          uuid-bytes (uuid/generate-uuidv7)
           after-ms #?(:clj (System/currentTimeMillis)
                       :cljs (.now js/Date))
           ;; Extract timestamp from first 48 bits (6 bytes)
-          ts-bytes (take 6 uuid)
+          ts-bytes (take 6 uuid-bytes)
           timestamp (reduce (fn [acc b]
                               (+ (* acc 256)
                                 (bit-and #?(:clj b :cljs b) 0xFF)))
@@ -81,14 +81,14 @@
 
   (testing "Random bytes are not all zeros"
     (dotimes [_ 20]
-      (let [uuid (uuid/generate-uuidv7)
-            random-bytes (drop 8 uuid)]
+      (let [uuid-bytes (uuid/generate-uuidv7)
+            random-bytes (drop 8 uuid-bytes)]
         (is (not (every? zero? random-bytes))
           "Random bytes should not all be zero")))))
 
 (deftest generate-uuidv7-validation-test
   (testing "Generated UUIDs pass strict UUIDv7 validation"
     (dotimes [_ 10]
-      (let [uuid (uuid/generate-uuidv7)]
-        (is (v/valid-uuidv7-bytes? uuid)
+      (let [uuid-bytes (uuid/generate-uuidv7)]
+        (is (v/valid-uuidv7-bytes? uuid-bytes)
           "Generated UUID should pass strict UUIDv7 validation")))))

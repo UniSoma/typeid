@@ -100,27 +100,27 @@
 
     :else
     ;; Split into prefix and suffix
-    (let [[prefix suffix] (util/split-typeid typeid-str)]
-      ;; Validate prefix
-      (let [prefix-validation (v/validate-prefix prefix)]
-        (if (:error prefix-validation)
-          prefix-validation
-          ;; Validate suffix format
-          (if-not (v/valid-base32-suffix? suffix)
-            {:error {:type :invalid-suffix
-                     :message "Invalid TypeID suffix format"
-                     :data {:suffix suffix}}}
-            ;; Decode suffix to UUID
-            (try
-              (let [uuid-bytes (base32/decode suffix)]
-                {:ok {:prefix prefix
-                      :suffix suffix
-                      :uuid uuid-bytes
-                      :typeid typeid-str}})
-              (catch #?(:clj Exception :cljs js/Error) e
-                {:error {:type :decode-error
-                         :message (str "Failed to decode suffix: " #?(:clj (.getMessage e) :cljs (.-message e)))
-                         :data {:suffix suffix}}}))))))))
+    (let [[prefix suffix] (util/split-typeid typeid-str)
+          ;; Validate prefix
+          prefix-validation (v/validate-prefix prefix)]
+      (if (:error prefix-validation)
+        prefix-validation
+        ;; Validate suffix format
+        (if-not (v/valid-base32-suffix? suffix)
+          {:error {:type :invalid-suffix
+                   :message "Invalid TypeID suffix format"
+                   :data {:suffix suffix}}}
+          ;; Decode suffix to UUID
+          (try
+            (let [uuid-bytes (base32/decode suffix)]
+              {:ok {:prefix prefix
+                    :suffix suffix
+                    :uuid uuid-bytes
+                    :typeid typeid-str}})
+            (catch #?(:clj Exception :cljs js/Error) e
+              {:error {:type :decode-error
+                       :message (str "Failed to decode suffix: " #?(:clj (.getMessage e) :cljs (.-message e)))
+                       :data {:suffix suffix}}})))))))
 
 ;; T037: Validate function (User Story 2)
 (defn validate
@@ -168,17 +168,17 @@
 
     :else
     ;; Split into prefix and suffix
-    (let [[prefix suffix] (util/split-typeid typeid-str)]
-      ;; Validate prefix
-      (let [prefix-validation (v/validate-prefix prefix)]
-        (if (:error prefix-validation)
-          prefix-validation
+    (let [[prefix suffix] (util/split-typeid typeid-str)
+          ;; Validate prefix
+          prefix-validation (v/validate-prefix prefix)]
+      (if (:error prefix-validation)
+        prefix-validation
           ;; Validate suffix format (but don't decode)
-          (if-not (v/valid-base32-suffix? suffix)
-            {:error {:type :invalid-suffix
-                     :message "Invalid TypeID suffix format"
-                     :data {:suffix suffix}}}
-            {:ok true}))))))
+        (if-not (v/valid-base32-suffix? suffix)
+          {:error {:type :invalid-suffix
+                   :message "Invalid TypeID suffix format"
+                   :data {:suffix suffix}}}
+          {:ok true})))))
 
 ;; T046: Encode function (User Story 3)
 (defn encode

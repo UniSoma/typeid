@@ -2,13 +2,14 @@
   "Compliance tests using official reference test cases from valid.yml and invalid.yml.
 
    These tests ensure 100% specification compliance with the TypeID spec v0.3.0."
-  (:require #?(:clj [clj-yaml.core :as yaml])
+  {:clj-kondo/config '{:linters {:unused-namespace {:level :off}
+                                 :unused-referred-var {:level :off}}}}
+  (:require #?(:clj  [clojure.test :refer [deftest is testing]]
+               :cljs [cljs.test :refer [deftest is testing]])
+    #?(:clj [clj-yaml.core :as yaml])
     #?(:clj [clojure.java.io :as io])
     #?(:clj [clojure.string :as string])
-    #?(:clj [clojure.test :refer [deftest is testing]]
-       :cljs [cljs.test :refer [deftest is testing]])
-    #?(:clj [typeid.core :as t]
-       :cljs [typeid.core :as t])))
+    [typeid.core :as t]))
 
 #?(:clj (set! *warn-on-reflection* true))
 

@@ -115,28 +115,28 @@
 
 (deftest valid-uuidv7-bytes-test
   (testing "Valid UUIDv7 bytes with correct version and variant"
-    (let [uuid #?(:clj (byte-array 16)
-                  :cljs (js/Uint8Array. 16))]
+    (let [uuid-bytes #?(:clj (byte-array 16)
+                        :cljs (js/Uint8Array. 16))]
       ;; Set version to 7 (byte 6, high nibble)
-      (aset uuid 6 #?(:clj (unchecked-byte 0x70) :cljs 0x70))
+      (aset uuid-bytes 6 #?(:clj (unchecked-byte 0x70) :cljs 0x70))
       ;; Set variant to 10 (byte 8, high 2 bits)
-      (aset uuid 8 #?(:clj (unchecked-byte 0x80) :cljs 0x80))
-      (is (v/valid-uuidv7-bytes? uuid))))
+      (aset uuid-bytes 8 #?(:clj (unchecked-byte 0x80) :cljs 0x80))
+      (is (v/valid-uuidv7-bytes? uuid-bytes))))
 
   (testing "Invalid UUIDv7 - wrong version"
-    (let [uuid #?(:clj (byte-array 16)
-                  :cljs (js/Uint8Array. 16))]
+    (let [uuid-bytes #?(:clj (byte-array 16)
+                        :cljs (js/Uint8Array. 16))]
       ;; Set version to 4 (byte 6, high nibble)
-      (aset uuid 6 #?(:clj (unchecked-byte 0x40) :cljs 0x40))
+      (aset uuid-bytes 6 #?(:clj (unchecked-byte 0x40) :cljs 0x40))
       ;; Set variant to 10 (byte 8, high 2 bits)
-      (aset uuid 8 #?(:clj (unchecked-byte 0x80) :cljs 0x80))
-      (is (not (v/valid-uuidv7-bytes? uuid)))))
+      (aset uuid-bytes 8 #?(:clj (unchecked-byte 0x80) :cljs 0x80))
+      (is (not (v/valid-uuidv7-bytes? uuid-bytes)))))
 
   (testing "Invalid UUIDv7 - wrong variant"
-    (let [uuid #?(:clj (byte-array 16)
-                  :cljs (js/Uint8Array. 16))]
+    (let [uuid-bytes #?(:clj (byte-array 16)
+                        :cljs (js/Uint8Array. 16))]
       ;; Set version to 7 (byte 6, high nibble)
-      (aset uuid 6 #?(:clj (unchecked-byte 0x70) :cljs 0x70))
+      (aset uuid-bytes 6 #?(:clj (unchecked-byte 0x70) :cljs 0x70))
       ;; Set variant to 00 (byte 8, high 2 bits)
-      (aset uuid 8 #?(:clj (unchecked-byte 0x00) :cljs 0x00))
-      (is (not (v/valid-uuidv7-bytes? uuid))))))
+      (aset uuid-bytes 8 #?(:clj (unchecked-byte 0x00) :cljs 0x00))
+      (is (not (v/valid-uuidv7-bytes? uuid-bytes))))))

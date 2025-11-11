@@ -31,9 +31,9 @@
                       (range 16)
                       ;; Reverse sequential
                       (reverse (range 16))]]
-      (doseq [bytes test-cases]
-        (let [uuid-bytes #?(:clj (byte-array bytes)
-                            :cljs (js/Uint8Array. (clj->js bytes)))
+      (doseq [test-bytes test-cases]
+        (let [uuid-bytes #?(:clj (byte-array test-bytes)
+                            :cljs (js/Uint8Array. (clj->js test-bytes)))
               encoded (base32/encode uuid-bytes)
               decoded (base32/decode encoded)]
           (is (= 26 (count encoded)))
