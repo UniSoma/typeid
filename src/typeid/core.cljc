@@ -73,7 +73,7 @@
      ;;            :data {...}}}
 
    See also: `generate`, `validate`"
-  [typeid-str]
+  [^String typeid-str]
   ;; Basic string validation
   (cond
     (not (string? typeid-str))
@@ -141,7 +141,7 @@
      ;;            :data {...}}}
 
    See also: `parse`, `generate`"
-  [typeid-str]
+  [^String typeid-str]
   ;; Basic string validation - same as parse but without decoding
   (cond
     (not (string? typeid-str))
@@ -205,7 +205,8 @@
              :data {:uuid-bytes uuid-bytes
                     :length (if #?(:clj (bytes? uuid-bytes)
                                    :cljs (instance? js/Uint8Array uuid-bytes))
-                              (alength uuid-bytes)
+                              #?(:clj (alength ^bytes uuid-bytes)
+                                 :cljs (alength uuid-bytes))
                               nil)}}}
 
     :else
@@ -259,7 +260,7 @@
     {:error {:type :invalid-uuid-length
              :message "UUID must be exactly 16 bytes"
              :data {:uuid-bytes uuid-bytes
-                    :length #?(:clj (if (bytes? uuid-bytes) (alength uuid-bytes) nil)
+                    :length #?(:clj (if (bytes? uuid-bytes) (alength ^bytes uuid-bytes) nil)
                                :cljs (if (instance? js/Uint8Array uuid-bytes) (.-length uuid-bytes) nil))}}}
     (let [hex-str (apply str (map #?(:clj (fn [b] (format "%02x" (bit-and b 0xff)))
                                      :cljs (fn [b] (.padStart (.toString (bit-and b 0xff) 16) 2 "0")))

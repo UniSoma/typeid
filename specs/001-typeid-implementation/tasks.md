@@ -168,12 +168,12 @@ Single library project structure:
 
 **Purpose**: Verify sub-microsecond performance targets
 
-- [ ] T063 [P] Create benchmark suite in dev/benchmarks/core_bench.clj using criterium per research.md:243-268
-- [ ] T064 [P] Benchmark typeid.core/generate (target: <2μs total)
-- [ ] T065 [P] Benchmark base32/encode (target: <1μs)
-- [ ] T066 [P] Benchmark base32/decode (target: <1μs)
-- [ ] T067 [P] Benchmark prefix validation (target: <500ns)
-- [ ] T068 Verify zero reflection warnings in benchmark output per research.md:224-240
+- [X] T063 [P] Create benchmark suite in dev/benchmarks/core_bench.clj using criterium per research.md:243-268
+- [X] T064 [P] Benchmark typeid.core/generate (target: <2μs total)
+- [X] T065 [P] Benchmark base32/encode (target: <1μs)
+- [X] T066 [P] Benchmark base32/decode (target: <1μs)
+- [X] T067 [P] Benchmark prefix validation (target: <500ns)
+- [X] T068 Verify zero reflection warnings in benchmark output per research.md:224-240
 - [ ] T069 Add benchmark results to README performance section per research.md:826-834
 
 **Checkpoint**: Performance targets met and documented

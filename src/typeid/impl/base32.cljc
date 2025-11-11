@@ -8,7 +8,7 @@
 #?(:clj (set! *warn-on-reflection* true))
 
 ;; T013: Encode alphabet (index → character)
-(def ^:private encode-alphabet
+(def ^:private ^String encode-alphabet
   "Crockford base32 alphabet for encoding 5-bit values to characters.
    Maps index [0-31] to character ['0'-'9', 'a'-'z' excluding i,l,o,u]."
   "0123456789abcdefghjkmnpqrstvwxyz")
@@ -110,13 +110,13 @@
                              (BigInteger/valueOf digit-val))))
                        acc))
            ;; Convert to byte array (16 bytes)
-           byte-arr (.toByteArray big-int)]
+           byte-arr ^bytes (.toByteArray ^BigInteger big-int)]
        ;; Handle padding: BigInteger may add a sign byte or have fewer than 16 bytes
        (cond
-         (= 16 (alength byte-arr)) byte-arr
-         (< (alength byte-arr) 16) (let [result (byte-array 16)]
-                                     (System/arraycopy byte-arr 0 result (- 16 (alength byte-arr)) (alength byte-arr))
-                                     result)
+         (= 16 (alength ^bytes byte-arr)) byte-arr
+         (< (alength ^bytes byte-arr) 16) (let [result (byte-array 16)]
+                                            (System/arraycopy byte-arr 0 result (- 16 (alength ^bytes byte-arr)) (alength ^bytes byte-arr))
+                                            result)
          :else (let [result (byte-array 16)]
                  (System/arraycopy byte-arr 1 result 0 16)
                  result)))

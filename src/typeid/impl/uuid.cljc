@@ -60,15 +60,15 @@
                (aset uuid-bytes 5 (bit-and timestamp 0xFF))))
 
     ;; Byte 6: Random (12 bits in low nibble) + version (4 bits = 0111 in high nibble)
-    #?(:clj (aset uuid-bytes 6 (unchecked-byte (bit-or (bit-and (aget rand-bytes 0) 0x0F) 0x70)))
+    #?(:clj (aset uuid-bytes 6 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 0) 0x0F) 0x70)))
        :cljs (aset uuid-bytes 6 (bit-or (bit-and (aget rand-bytes 0) 0x0F) 0x70)))
 
     ;; Byte 7: Random (8 bits)
-    #?(:clj (aset uuid-bytes 7 (aget rand-bytes 1))
+    #?(:clj (aset uuid-bytes 7 (aget ^bytes rand-bytes 1))
        :cljs (aset uuid-bytes 7 (aget rand-bytes 1)))
 
     ;; Byte 8: Variant (2 bits = 10 in high 2 bits) + random (6 bits in low 6 bits)
-    #?(:clj (aset uuid-bytes 8 (unchecked-byte (bit-or (bit-and (aget rand-bytes 2) 0x3F) 0x80)))
+    #?(:clj (aset uuid-bytes 8 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 2) 0x3F) 0x80)))
        :cljs (aset uuid-bytes 8 (bit-or (bit-and (aget rand-bytes 2) 0x3F) 0x80)))
 
     ;; Bytes 9-15: Random (56 bits)
