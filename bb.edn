@@ -187,8 +187,8 @@
    :task (shell "tree -I 'target|node_modules|.git|.cpcache|.clj-kondo/.cache|docs' -L 3")}
 
   outdated
-  {:doc "Check for outdated dependencies"
-   :task (shell "clojure -M:outdated")}
+  {:doc "Check for outdated dependencies (supports args: --upgrade, etc.)"
+   :task (apply shell "clojure" "-M:outdated" *command-line-args*)}
 
   classpath
   {:doc "Show the classpath"
