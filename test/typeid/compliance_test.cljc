@@ -9,6 +9,7 @@
     #?(:clj [clj-yaml.core :as yaml])
     #?(:clj [clojure.java.io :as io])
     #?(:clj [clojure.string :as string])
+    [typeid.codec :as codec]
     [typeid.core :as t]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -45,11 +46,8 @@
                ;; Parse UUID from hex string (with or without dashes)
                uuid-hex-clean #?(:clj (string/replace uuid-hex #"-" "")
                                  :cljs uuid-hex)
-               {uuid-bytes :ok} (t/hex->uuid uuid-hex-clean)
-               {encoded-typeid :ok encode-error :error} (t/encode uuid-bytes prefix)]
-           (is (nil? encode-error)
-             (str "Test case '" test-name "' should not error on encode: "
-               (:message encode-error)))
+               uuid-bytes (codec/hex->uuid uuid-hex-clean)
+               encoded-typeid (codec/encode uuid-bytes prefix)]
            (is (= expected-typeid encoded-typeid)
              (str "Test case '" test-name "' encode mismatch: "
                "expected=" expected-typeid " actual=" encoded-typeid)))))))
@@ -67,15 +65,12 @@
                ;; Parse UUID from hex string (with or without dashes)
                expected-uuid-clean #?(:clj (string/replace expected-uuid #"-" "")
                                       :cljs expected-uuid)
-               {parsed :ok parse-error :error} (t/parse typeid-str)]
-           (is (nil? parse-error)
-             (str "Test case '" test-name "' should not error on parse: "
-               (:message parse-error)))
+               parsed (t/parse typeid-str)]
            (is (= expected-prefix (:prefix parsed))
              (str "Test case '" test-name "' prefix mismatch: "
                "expected=" expected-prefix " actual=" (:prefix parsed)))
            ;; Convert UUID bytes to hex for comparison
-           (let [{uuid-hex :ok} (t/uuid->hex (:uuid parsed))]
+           (let [uuid-hex (codec/uuid->hex (:uuid parsed))]
              (is (= expected-uuid-clean uuid-hex)
                (str "Test case '" test-name "' UUID mismatch: "
                  "expected=" expected-uuid-clean " actual=" uuid-hex))))))))
@@ -88,16 +83,18 @@
        (doseq [test-case invalid-test-cases]
          (let [test-name (:name test-case)
                invalid-typeid (:typeid test-case)
-               description (:description test-case)
-               {ok :ok error :error} (t/parse invalid-typeid)]
-           (is (nil? ok)
-             (str "Test case '" test-name "' should fail: " description))
-           (is (some? error)
-             (str "Test case '" test-name "' should return an error: " description))
-           (is (keyword? (:type error))
-             (str "Test case '" test-name "' error should have a :type keyword"))
-           (is (string? (:message error))
-             (str "Test case '" test-name "' error should have a :message string")))))))
+               description (:description test-case)]
+           (is (thrown? #?(:clj Exception :cljs js/Error)
+                 (t/parse invalid-typeid))
+             (str "Test case '" test-name "' should throw: " description))
+           ;; Verify error details using explain
+           (let [error (t/explain invalid-typeid)]
+             (is (some? error)
+               (str "Test case '" test-name "' should return an error: " description))
+             (is (keyword? (:type error))
+               (str "Test case '" test-name "' error should have a :type keyword"))
+             (is (string? (:message error))
+               (str "Test case '" test-name "' error should have a :message string"))))))))
 
 ;; Round-trip property test
 
@@ -107,8 +104,8 @@
        (doseq [test-case valid-test-cases]
          (let [test-name (:name test-case)
                original-typeid (:typeid test-case)
-               {parsed :ok} (t/parse original-typeid)
-               {re-encoded :ok} (t/encode (:uuid parsed) (:prefix parsed))]
+               parsed (t/parse original-typeid)
+               re-encoded (codec/encode (:uuid parsed) (:prefix parsed))]
            (is (= original-typeid re-encoded)
              (str "Test case '" test-name "' round-trip failed: "
                "original=" original-typeid " re-encoded=" re-encoded)))))))

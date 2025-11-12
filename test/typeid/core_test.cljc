@@ -1,6 +1,7 @@
 (ns typeid.core-test
   (:require [clojure.string :as str]
     [clojure.test :refer [deftest is testing]]
+    [typeid.codec :as codec]
     [typeid.core :as t]
     [typeid.validation :as v]))
 
@@ -119,75 +120,79 @@
 (deftest parse-valid-typeid-test
   (testing "Parse TypeID with prefix"
     (let [typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"
-          {:keys [ok error]} (t/parse typeid)]
-      (is (nil? error))
-      (is (map? ok))
-      (is (= "user" (:prefix ok)))
-      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix ok)))
-      (is (= typeid (:typeid ok)))
-      (is (some? (:uuid ok)))
-      (is (v/valid-uuid-bytes? (:uuid ok)))))
+          parsed (t/parse typeid)]
+      (is (map? parsed))
+      (is (= "user" (:prefix parsed)))
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))
+      (is (= typeid (:typeid parsed)))
+      (is (some? (:uuid parsed)))
+      (is (v/valid-uuid-bytes? (:uuid parsed)))))
 
   (testing "Parse TypeID without prefix"
     (let [typeid "01h5fskfsk4fpeqwnsyz5hj55t"
-          {:keys [ok error]} (t/parse typeid)]
-      (is (nil? error))
-      (is (= "" (:prefix ok)))
-      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix ok)))
-      (is (= typeid (:typeid ok)))
-      (is (v/valid-uuid-bytes? (:uuid ok)))))
+          parsed (t/parse typeid)]
+      (is (= "" (:prefix parsed)))
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))
+      (is (= typeid (:typeid parsed)))
+      (is (v/valid-uuid-bytes? (:uuid parsed)))))
 
   (testing "Parse TypeID with underscores in prefix"
     (let [typeid "my_user_type_01h5fskfsk4fpeqwnsyz5hj55t"
-          {:keys [ok error]} (t/parse typeid)]
-      (is (nil? error))
-      (is (= "my_user_type" (:prefix ok)))
-      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix ok))))))
+          parsed (t/parse typeid)]
+      (is (= "my_user_type" (:prefix parsed)))
+      (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed))))))
 
 (deftest parse-invalid-typeid-test
   (testing "Reject TypeID with uppercase"
-    (let [{:keys [ok error]} (t/parse "User_01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? ok))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "User_01h5fskfsk4fpeqwnsyz5hj55t")))
+    (let [error (t/explain "User_01h5fskfsk4fpeqwnsyz5hj55t")]
       (is (some? error))
-      (is (= :invalid-case (:type error)))))
+      (is (= :typeid/invalid-format (:type error)))))
 
   (testing "Reject TypeID that's too short"
-    (let [{:keys [ok error]} (t/parse "user_tooshort")]
-      (is (nil? ok))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "user_tooshort")))
+    (let [error (t/explain "user_tooshort")]
       (is (some? error))
-      (is (= :invalid-length (:type error)))))
+      (is (= :typeid/invalid-length (:type error)))))
 
   (testing "Reject TypeID that's too long"
-    (let [{:keys [ok error]} (t/parse (str "user_" (apply str (repeat 100 "a"))))]
-      (is (nil? ok))
-      (is (some? error))
-      (is (= :invalid-length (:type error)))))
+    (let [long-typeid (str "user_" (apply str (repeat 100 "a")))]
+      (is (thrown? #?(:clj Exception :cljs js/Error)
+            (t/parse long-typeid)))
+      (let [error (t/explain long-typeid)]
+        (is (some? error))
+        (is (= :typeid/invalid-length (:type error))))))
 
   (testing "Reject TypeID with invalid base32 character"
-    (let [{:keys [ok error]} (t/parse "user_01h5fskfsk4fpeqwnsyz5hj5il")] ; 'i' and 'l' are invalid
-      (is (nil? ok))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "user_01h5fskfsk4fpeqwnsyz5hj5il"))) ; 'i' and 'l' are invalid
+    (let [error (t/explain "user_01h5fskfsk4fpeqwnsyz5hj5il")]
       (is (some? error))
-      (is (= :invalid-suffix (:type error)))))
+      (is (= :typeid/invalid-suffix (:type error)))))
 
   (testing "Reject TypeID with suffix starting with 8-z"
-    (let [{:keys [ok error]} (t/parse "user_8zzzzzzzzzzzzzzzzzzzzzzzzz")]
-      (is (nil? ok))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "user_8zzzzzzzzzzzzzzzzzzzzzzzzz")))
+    (let [error (t/explain "user_8zzzzzzzzzzzzzzzzzzzzzzzzz")]
       (is (some? error))
-      (is (= :invalid-suffix (:type error)))))
+      (is (= :typeid/invalid-suffix (:type error)))))
 
   #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
-    (let [{:keys [ok error]} (t/parse 12345)]
-      (is (nil? ok))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse 12345)))
+    (let [error (t/explain 12345)]
       (is (some? error))
-      (is (= :invalid-typeid-type (:type error))))))
+      (is (= :typeid/invalid-input-type (:type error))))))
 
 (deftest generate-parse-round-trip-test
   (testing "Generate and parse round-trip preserves data"
     (let [prefixes ["user" "order" "session" "" "a" "my_type"]]
       (doseq [prefix prefixes]
         (let [typeid (t/generate prefix)
-              {parsed :ok} (t/parse typeid)]
+              parsed (t/parse typeid)]
           (is (= prefix (:prefix parsed)))
           (is (= typeid (:typeid parsed)))
           (is (= 26 (count (:suffix parsed))))
@@ -195,9 +200,9 @@
 
   (testing "Parse and re-generate produces different UUID but same prefix"
     (let [typeid1 (t/generate "user")
-          {parsed1 :ok} (t/parse typeid1)
+          parsed1 (t/parse typeid1)
           typeid2 (t/generate "user")
-          {parsed2 :ok} (t/parse typeid2)]
+          parsed2 (t/parse typeid2)]
       (is (= "user" (:prefix parsed1) (:prefix parsed2)))
       (is (not= typeid1 typeid2)) ; Different UUIDs
       (is (not= (:suffix parsed1) (:suffix parsed2))))))
@@ -205,57 +210,45 @@
 ;; T034: Unit tests for validate function (User Story 2)
 (deftest validate-valid-typeid-test
   (testing "Validate correct TypeID with prefix"
-    (let [{:keys [ok error]} (t/validate "user_01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? error))
-      (is (= true ok))))
+    (is (nil? (t/explain "user_01h5fskfsk4fpeqwnsyz5hj55t"))))
 
   (testing "Validate correct TypeID without prefix"
-    (let [{:keys [ok error]} (t/validate "01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? error))
-      (is (= true ok))))
+    (is (nil? (t/explain "01h5fskfsk4fpeqwnsyz5hj55t"))))
 
   (testing "Validate TypeID with underscores in prefix"
-    (let [{:keys [ok error]} (t/validate "my_user_type_01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? error))
-      (is (= true ok)))))
+    (is (nil? (t/explain "my_user_type_01h5fskfsk4fpeqwnsyz5hj55t")))))
 
 (deftest validate-invalid-typeid-test
   (testing "Reject TypeID with uppercase"
-    (let [{:keys [ok error]} (t/validate "User_01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? ok))
+    (let [error (t/explain "User_01h5fskfsk4fpeqwnsyz5hj55t")]
       (is (some? error))
-      (is (= :invalid-case (:type error)))))
+      (is (= :typeid/invalid-format (:type error)))))
 
   (testing "Reject TypeID that's too short"
-    (let [{:keys [ok error]} (t/validate "user_tooshort")]
-      (is (nil? ok))
+    (let [error (t/explain "user_tooshort")]
       (is (some? error))
-      (is (= :invalid-length (:type error)))))
+      (is (= :typeid/invalid-length (:type error)))))
 
   (testing "Reject TypeID that's too long"
-    (let [{:keys [ok error]} (t/validate (str "user_" (apply str (repeat 100 "a"))))]
-      (is (nil? ok))
+    (let [error (t/explain (str "user_" (apply str (repeat 100 "a"))))]
       (is (some? error))
-      (is (= :invalid-length (:type error)))))
+      (is (= :typeid/invalid-length (:type error)))))
 
   (testing "Reject TypeID with invalid base32 character"
-    (let [{:keys [ok error]} (t/validate "user_01h5fskfsk4fpeqwnsyz5hj5il")] ; 'i' and 'l' are invalid
-      (is (nil? ok))
+    (let [error (t/explain "user_01h5fskfsk4fpeqwnsyz5hj5il")] ; 'i' and 'l' are invalid
       (is (some? error))
-      (is (= :invalid-suffix (:type error)))))
+      (is (= :typeid/invalid-suffix (:type error)))))
 
   (testing "Reject TypeID with suffix starting with 8-z"
-    (let [{:keys [ok error]} (t/validate "user_8zzzzzzzzzzzzzzzzzzzzzzzzz")]
-      (is (nil? ok))
+    (let [error (t/explain "user_8zzzzzzzzzzzzzzzzzzzzzzzzz")]
       (is (some? error))
-      (is (= :invalid-suffix (:type error)))))
+      (is (= :typeid/invalid-suffix (:type error)))))
 
   #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
-    (let [{:keys [ok error]} (t/validate 12345)]
-      (is (nil? ok))
+    (let [error (t/explain 12345)]
       (is (some? error))
-      (is (= :invalid-typeid-type (:type error))))))
+      (is (= :typeid/invalid-input-type (:type error))))))
 
 (deftest validate-vs-parse-test
   (testing "Validate should accept same inputs as parse"
@@ -263,12 +256,10 @@
                    "01h5fskfsk4fpeqwnsyz5hj55t"
                    "my_type_01h5fskfsk4fpeqwnsyz5hj55t"]]
       (doseq [typeid typeids]
-        (let [validate-result (t/validate typeid)
-              parse-result (t/parse typeid)]
-          (is (nil? (:error validate-result)))
-          (is (nil? (:error parse-result)))
-          (is (= true (:ok validate-result)))
-          (is (some? (:ok parse-result))))))))
+        (let [explain-result (t/explain typeid)
+              parsed (t/parse typeid)]
+          (is (nil? explain-result))
+          (is (some? parsed)))))))
 
 ;; T036: Edge case tests
 (deftest edge-case-prefix-tests
@@ -280,14 +271,11 @@
       (is (.startsWith typeid max-prefix))
 
       ;; Should parse successfully
-      (let [{:keys [ok error]} (t/parse typeid)]
-        (is (nil? error))
-        (is (= max-prefix (:prefix ok))))
+      (let [parsed (t/parse typeid)]
+        (is (= max-prefix (:prefix parsed))))
 
       ;; Should validate successfully
-      (let [{:keys [ok error]} (t/validate typeid)]
-        (is (nil? error))
-        (is (= true ok)))))
+      (is (nil? (t/explain typeid)))))
 
   (testing "Consecutive underscores in prefix"
     (let [prefix "my__type__name" ; Multiple consecutive underscores
@@ -296,33 +284,30 @@
       (is (.startsWith typeid prefix))
 
       ;; Should parse successfully
-      (let [{:keys [ok error]} (t/parse typeid)]
-        (is (nil? error))
-        (is (= prefix (:prefix ok))))
+      (let [parsed (t/parse typeid)]
+        (is (= prefix (:prefix parsed))))
 
       ;; Should validate successfully
-      (let [{:keys [ok error]} (t/validate typeid)]
-        (is (nil? error))
-        (is (= true ok)))))
+      (is (nil? (t/explain typeid)))))
 
   (testing "Prefix boundary characters"
     ;; Single character prefix (minimum non-empty)
     (let [typeid-a (t/generate "a")]
       (is (= 28 (count typeid-a))) ; 1 + 1 + 26
-      (let [{:keys [ok]} (t/parse typeid-a)]
-        (is (= "a" (:prefix ok)))))
+      (let [parsed (t/parse typeid-a)]
+        (is (= "a" (:prefix parsed)))))
 
     ;; Two character prefix
     (let [typeid-ab (t/generate "ab")]
       (is (= 29 (count typeid-ab))) ; 2 + 1 + 26
-      (let [{:keys [ok]} (t/parse typeid-ab)]
-        (is (= "ab" (:prefix ok)))))
+      (let [parsed (t/parse typeid-ab)]
+        (is (= "ab" (:prefix parsed)))))
 
     ;; Three character prefix (recommended minimum)
     (let [typeid-abc (t/generate "abc")]
       (is (= 30 (count typeid-abc))) ; 3 + 1 + 26
-      (let [{:keys [ok]} (t/parse typeid-abc)]
-        (is (= "abc" (:prefix ok))))))
+      (let [parsed (t/parse typeid-abc)]
+        (is (= "abc" (:prefix parsed))))))
 
   (testing "Prefix must start and end with letter (not underscore)"
     ;; Valid: starts and ends with letter
@@ -330,9 +315,8 @@
       (doseq [prefix valid-prefixes]
         (let [typeid (t/generate prefix)]
           (is (string? typeid) (str "Should generate TypeID for prefix: " prefix))
-          (let [{:keys [ok error]} (t/parse typeid)]
-            (is (nil? error) (str "Should parse successfully for prefix: " prefix))
-            (is (= prefix (:prefix ok)))))))
+          (let [parsed (t/parse typeid)]
+            (is (= prefix (:prefix parsed)))))))
 
     ;; Invalid: starts with underscore
     (is (thrown? #?(:clj Exception :cljs js/Error)
@@ -348,57 +332,62 @@
     (doseq [first-char [\0 \1 \2 \3 \4 \5 \6 \7]]
       (let [valid-suffix (str first-char (apply str (repeat 25 "z")))
             valid-typeid (str "test_" valid-suffix)
-            {:keys [ok error]} (t/parse valid-typeid)]
-        (is (nil? error) (str "Should accept suffix starting with: " first-char))
-        (is (some? ok))))
+            parsed (t/parse valid-typeid)]
+        (is (some? parsed) (str "Should accept suffix starting with: " first-char))))
 
     ;; Invalid: first char 8-z
     (doseq [first-char [\8 \9 \a \b \c \d \e \f \g \h \j \k \m \n \p \q \r \s \t \v \w \x \y \z]]
       (let [invalid-suffix (str first-char (apply str (repeat 25 "z")))
             invalid-typeid (str "test_" invalid-suffix)
-            {:keys [ok error]} (t/parse invalid-typeid)]
-        (is (nil? ok) (str "Should reject suffix starting with: " first-char))
-        (is (= :invalid-suffix (:type error))))))
+            error (t/explain invalid-typeid)]
+        (is (some? error) (str "Should reject suffix starting with: " first-char))
+        (is (= :typeid/invalid-suffix (:type error))))))
 
   (testing "Suffix must be exactly 26 characters"
     ;; Too short (25 chars)
-    (let [{:keys [ok error]} (t/parse "test_01h5fskfsk4fpeqwnsyz5hj5")]
-      (is (nil? ok))
-      (is (= :invalid-suffix (:type error))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "test_01h5fskfsk4fpeqwnsyz5hj5")))
+    (let [error (t/explain "test_01h5fskfsk4fpeqwnsyz5hj5")]
+      (is (some? error))
+      (is (= :typeid/invalid-suffix (:type error))))
 
     ;; Too long (28 chars)
-    (let [{:keys [ok error]} (t/parse "test_01h5fskfsk4fpeqwnsyz5hj55tt")]
-      (is (nil? ok))
-      (is (= :invalid-suffix (:type error))))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "test_01h5fskfsk4fpeqwnsyz5hj55tt")))
+    (let [error (t/explain "test_01h5fskfsk4fpeqwnsyz5hj55tt")]
+      (is (some? error))
+      (is (= :typeid/invalid-suffix (:type error))))))
 
 (deftest edge-case-typeid-length-tests
   (testing "Minimum TypeID length (26 chars - no prefix)"
     (let [min-typeid "01h5fskfsk4fpeqwnsyz5hj55t"
-          {:keys [ok error]} (t/parse min-typeid)]
-      (is (nil? error))
-      (is (= "" (:prefix ok)))
+          parsed (t/parse min-typeid)]
+      (is (= "" (:prefix parsed)))
       (is (= 26 (count min-typeid)))))
 
   (testing "Maximum TypeID length (90 chars - 63 prefix + 1 sep + 26 suffix)"
     (let [max-prefix (str "a" (apply str (repeat 61 "b")) "z") ; 63 chars
           max-typeid (t/generate max-prefix)
-          {:keys [ok error]} (t/parse max-typeid)]
-      (is (nil? error))
-      (is (= max-prefix (:prefix ok)))
+          parsed (t/parse max-typeid)]
+      (is (= max-prefix (:prefix parsed)))
       (is (= 90 (count max-typeid)))))
 
   (testing "Length boundaries"
     ;; 25 chars: too short
-    (let [{:keys [ok error]} (t/parse "0h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? ok))
-      (is (= :invalid-length (:type error))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/parse "0h5fskfsk4fpeqwnsyz5hj55t")))
+    (let [error (t/explain "0h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (some? error))
+      (is (= :typeid/invalid-length (:type error))))
 
     ;; 91 chars: too long (64-char prefix + sep + 26 suffix)
     (let [too-long-prefix (apply str (repeat 64 "a"))
-          too-long-typeid (str too-long-prefix "_01h5fskfsk4fpeqwnsyz5hj55t")
-          {:keys [ok error]} (t/parse too-long-typeid)]
-      (is (nil? ok))
-      (is (= :invalid-length (:type error))))))
+          too-long-typeid (str too-long-prefix "_01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (thrown? #?(:clj Exception :cljs js/Error)
+            (t/parse too-long-typeid)))
+      (let [error (t/explain too-long-typeid)]
+        (is (some? error))
+        (is (= :typeid/invalid-length (:type error)))))))
 
 ;; T041-T045: User Story 3 - UUID Conversion Tests
 
@@ -408,55 +397,47 @@
                                                               0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
                         :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
-          {:keys [ok error]} (t/encode uuid-bytes "user")]
-      (is (nil? error))
-      (is (string? ok))
-      (is (.startsWith ok "user_"))
-      (is (= 31 (count ok)))))
+          encoded (codec/encode uuid-bytes "user")]
+      (is (string? encoded))
+      (is (.startsWith encoded "user_"))
+      (is (= 31 (count encoded)))))
 
   (testing "Encode UUID bytes without prefix"
     (let [uuid-bytes #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                               0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
                         :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
-          {:keys [ok error]} (t/encode uuid-bytes "")]
-      (is (nil? error))
-      (is (string? ok))
-      (is (= 26 (count ok)))))
+          encoded (codec/encode uuid-bytes "")]
+      (is (string? encoded))
+      (is (= 26 (count encoded)))))
 
   (testing "Reject invalid UUID length"
     (let [short-uuid #?(:clj (byte-array (repeat 8 0))
-                        :cljs (js/Uint8Array. 8))
-          {:keys [ok error]} (t/encode short-uuid "user")]
-      (is (nil? ok))
-      (is (some? error))
-      (is (= :invalid-uuid-length (:type error)))))
+                        :cljs (js/Uint8Array. 8))]
+      (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+            #"(?i)16 bytes"
+            (codec/encode short-uuid "user")))))
 
   (testing "Reject invalid prefix"
     (let [uuid-bytes #?(:clj (byte-array (repeat 16 0))
-                        :cljs (js/Uint8Array. 16))
-          {:keys [ok error]} (t/encode uuid-bytes "User123")]
-      (is (nil? ok))
-      (is (some? error))
-      (is (= :invalid-prefix-format (:type error))))))
+                        :cljs (js/Uint8Array. 16))]
+      (is (thrown? #?(:clj Exception :cljs js/Error)
+            (codec/encode uuid-bytes "User123"))))))
 
 (deftest decode-function-test
   (testing "Decode valid TypeID to UUID bytes"
-    (let [{:keys [ok error]} (t/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? error))
-      (is (some? ok))
-      (is (= 16 (alength ok)))))
+    (let [uuid-bytes (codec/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (some? uuid-bytes))
+      (is (= 16 (alength uuid-bytes)))))
 
   (testing "Decode TypeID without prefix"
-    (let [{:keys [ok error]} (t/decode "01h5fskfsk4fpeqwnsyz5hj55t")]
-      (is (nil? error))
-      (is (some? ok))
-      (is (= 16 (alength ok)))))
+    (let [uuid-bytes (codec/decode "01h5fskfsk4fpeqwnsyz5hj55t")]
+      (is (some? uuid-bytes))
+      (is (= 16 (alength uuid-bytes)))))
 
   (testing "Decode rejects invalid TypeID"
-    (let [{:keys [ok error]} (t/decode "invalid")]
-      (is (nil? ok))
-      (is (some? error)))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (codec/decode "invalid")))))
 
 (deftest uuid-hex-conversion-test
   (testing "Convert UUID bytes to hex string"
@@ -464,55 +445,49 @@
                                                               0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
                         :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                         0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
-          {:keys [ok error]} (t/uuid->hex uuid-bytes)]
-      (is (nil? error))
-      (is (string? ok))
-      (is (= 32 (count ok)))
-      (is (= "0188e5f5f34a7b3d9f2a1c5de67fa8c1" ok))
-      (is (re-matches #"^[0-9a-f]{32}$" ok))))
+          hex-str (codec/uuid->hex uuid-bytes)]
+      (is (string? hex-str))
+      (is (= 32 (count hex-str)))
+      (is (= "0188e5f5f34a7b3d9f2a1c5de67fa8c1" hex-str))
+      (is (re-matches #"^[0-9a-f]{32}$" hex-str))))
 
   (testing "Convert hex string to UUID bytes"
-    (let [{:keys [ok error]} (t/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8c1")]
-      (is (nil? error))
-      (is (some? ok))
-      (is (= 16 (alength ok)))
+    (let [uuid-bytes (codec/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8c1")]
+      (is (some? uuid-bytes))
+      (is (= 16 (alength uuid-bytes)))
       (is (= (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                   0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])
-            (vec ok)))))
+            (vec uuid-bytes)))))
 
   (testing "Reject invalid hex length"
-    (let [{:keys [ok error]} (t/hex->uuid "0188e5")]
-      (is (nil? ok))
-      (is (some? error))
-      (is (= :invalid-hex-length (:type error)))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (codec/hex->uuid "0188e5"))))
 
   (testing "Reject invalid hex characters"
-    (let [{:keys [ok error]} (t/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8cz")]
-      (is (nil? ok))
-      (is (some? error))
-      (is (= :invalid-hex-char (:type error)))))
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (codec/hex->uuid "0188e5f5f34a7b3d9f2a1c5de67fa8cz"))))
 
   (testing "UUID->hex->UUID round-trip"
     (let [original-uuid #?(:clj (byte-array (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
                            :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                            0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
-          {hex-str :ok} (t/uuid->hex original-uuid)
-          {recovered-uuid :ok} (t/hex->uuid hex-str)]
+          hex-str (codec/uuid->hex original-uuid)
+          recovered-uuid (codec/hex->uuid hex-str)]
       (is (= (vec original-uuid) (vec recovered-uuid))))))
 
 (deftest typeid-map-conversion-test
   (testing "Convert TypeID to map (unwrapped parse)"
-    (let [result (t/typeid->map "user_01h5fskfsk4fpeqwnsyz5hj55t")]
+    (let [result (t/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")]
       (is (map? result))
       (is (= "user" (:prefix result)))
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix result)))
       (is (= "user_01h5fskfsk4fpeqwnsyz5hj55t" (:typeid result)))
       (is (some? (:uuid result)))))
 
-  (testing "typeid->map throws on invalid input"
+  (testing "parse throws on invalid input"
     (is (thrown? #?(:clj Exception :cljs js/Error)
-          (t/typeid->map "invalid")))))
+          (t/parse "invalid")))))
 
 (deftest encode-decode-round-trip-test
   (testing "Encode→decode round-trip preserves UUID"
@@ -520,14 +495,14 @@
                                                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
                            :cljs (js/Uint8Array. (clj->js [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
                                                            0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
-          {typeid-str :ok} (t/encode original-uuid "order")
-          {recovered-uuid :ok} (t/decode typeid-str)]
+          typeid-str (codec/encode original-uuid "order")
+          recovered-uuid (codec/decode typeid-str)]
       (is (= (vec original-uuid) (vec recovered-uuid)))))
 
   (testing "Generate→decode→encode round-trip"
     (let [typeid1 (t/generate "session")
-          {uuid-bytes :ok} (t/decode typeid1)
-          {typeid2 :ok} (t/encode uuid-bytes "session")]
+          uuid-bytes (codec/decode typeid1)
+          typeid2 (codec/encode uuid-bytes "session")]
       ;; TypeIDs should be identical (same UUID)
       (is (= typeid1 typeid2))
       ;; Both should be valid
@@ -537,10 +512,10 @@
 (deftest suffix-extraction-test
   (testing "Extract suffix from TypeID with prefix"
     (let [typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"
-          {parsed :ok} (t/parse typeid)]
+          parsed (t/parse typeid)]
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))))
 
   (testing "Extract suffix from TypeID without prefix"
     (let [typeid "01h5fskfsk4fpeqwnsyz5hj55t"
-          {parsed :ok} (t/parse typeid)]
+          parsed (t/parse typeid)]
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed))))))
