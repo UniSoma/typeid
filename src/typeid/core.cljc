@@ -17,8 +17,10 @@
 (defn generate
   "Generate a new TypeID with the given prefix.
 
-   The prefix must be 0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?,
-   or an empty string for prefix-less TypeIDs.
+   The prefix can be:
+   - A string (0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?)
+   - A keyword (its name will be used as the prefix)
+   - nil or omitted (generates a prefix-less TypeID)
 
    Generates a UUIDv7 (timestamp-based UUID) and encodes it as a base32 suffix.
 
@@ -26,27 +28,38 @@
 
    Throws ex-info if prefix is invalid.
 
-   Example:
+   Examples:
      (generate \"user\")
      ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     (generate :user)
+     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     (generate nil)
+     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     (generate)
+     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
      (generate \"\")
      ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
    See also: `parse`, `validate`"
-  [prefix]
-  ;; Validate prefix
-  (let [prefix-validation (v/validate-prefix prefix)]
-    (when (:error prefix-validation)
-      (throw (ex-info (:message (:error prefix-validation))
-               (:error prefix-validation))))
-    ;; Generate UUIDv7
-    (let [uuid-bytes (uuid/generate-uuidv7)
-          ;; Encode to base32
-          suffix (base32/encode uuid-bytes)
-          ;; Combine prefix + suffix
-          typeid-str (util/join-typeid prefix suffix)]
-      typeid-str)))
+  ([] (generate ""))
+  ([prefix]
+   ;; Normalize prefix: nil -> "", keyword -> name
+    (let [normalized-prefix (cond (nil? prefix) "" (keyword? prefix) (name prefix) :else prefix)
+          prefix-validation (v/validate-prefix normalized-prefix)]
+      (when (:error prefix-validation)
+        (throw (ex-info (:message (:error prefix-validation))
+                 (:error prefix-validation))))
+       ;; Generate UUIDv7
+      (let [uuid-bytes (uuid/generate-uuidv7)
+             ;; Encode to base32
+            suffix (base32/encode uuid-bytes)
+             ;; Combine prefix + suffix
+            typeid-str (util/join-typeid normalized-prefix suffix)]
+        typeid-str))))
 
 ;; T030: Parse function
 (defn parse

@@ -61,6 +61,60 @@
           #"(?i)prefix.*pattern"
           (t/generate "_user")))))
 
+(deftest generate-with-no-args-test
+  (testing "Generate TypeID with no arguments"
+    (let [typeid (t/generate)]
+      (is (string? typeid))
+      (is (= 26 (count typeid))) ; just suffix, no prefix
+      (is (not (str/includes? typeid "_"))))) ; no separator
+
+  (testing "Generate TypeID with nil prefix"
+    (let [typeid (t/generate nil)]
+      (is (string? typeid))
+      (is (= 26 (count typeid))) ; just suffix, no prefix
+      (is (not (str/includes? typeid "_"))))) ; no separator
+
+  (testing "No-args and nil generate unique TypeIDs"
+    (let [id1 (t/generate)
+          id2 (t/generate nil)]
+      (is (not= id1 id2))
+      (is (= 26 (count id1)))
+      (is (= 26 (count id2))))))
+
+(deftest generate-with-keyword-prefix-test
+  (testing "Generate TypeID with keyword prefix"
+    (let [typeid (t/generate :user)]
+      (is (string? typeid))
+      (is (= 31 (count typeid))) ; "user" (4) + "_" (1) + suffix (26)
+      (is (.startsWith typeid "user_"))
+      (is (= 26 (count (subs typeid 5)))))) ; suffix is 26 chars
+
+  (testing "Generate TypeID with various keyword prefixes"
+    (doseq [prefix [:a :abc :my_type :user_account]]
+      (let [typeid (t/generate prefix)
+            prefix-str (name prefix)]
+        (is (.startsWith typeid (str prefix-str "_")))
+        (is (= (+ (count prefix-str) 1 26) (count typeid))))))
+
+  (testing "Keyword and string prefixes produce same format"
+    (let [id1 (t/generate "user")
+          id2 (t/generate :user)]
+      (is (not= id1 id2)) ; Different UUIDs
+      (is (.startsWith id1 "user_"))
+      (is (.startsWith id2 "user_"))
+      (is (= (count id1) (count id2)))))
+
+  (testing "Reject invalid keyword prefix"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+          #"(?i)prefix.*pattern|lowercase"
+          (t/generate :User))))
+
+  (testing "Namespaced keyword uses name part only"
+    (let [typeid (t/generate :ns/user)]
+      (is (string? typeid))
+      (is (.startsWith typeid "user_")) ; namespace is ignored
+      (is (= 31 (count typeid))))))
+
 ;; T024: Unit tests for parse function
 (deftest parse-valid-typeid-test
   (testing "Parse TypeID with prefix"

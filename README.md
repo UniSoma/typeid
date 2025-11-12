@@ -41,9 +41,20 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 ```clojure
 (require '[typeid.core :as t])
 
-;; Generate a new TypeID
+;; Generate a new TypeID with string prefix
 (t/generate "user")
 ;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
+
+;; Generate with keyword prefix (extracts name)
+(t/generate :user)
+;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
+
+;; Generate without prefix (nil or no args)
+(t/generate nil)
+;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
+
+(t/generate)
+;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
 
 ;; Parse a TypeID
 (t/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
