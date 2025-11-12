@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         java: [17, 25]
-        clojure: [1.11.1, 1.12.3]
+        clojure: [1.11.4, 1.12.3]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -31,9 +31,11 @@ jobs:
         run: clojure -M:lint
       - name: Build jar
         run: clojure -T:build jar
-      - name: Run coverage (Java 21, Clojure 1.12.3 only)
-        run: clojure -M:coverage
+      - name: Run coverage (Java 17, Clojure 1.11.4 only)
+        if: matrix.java == 17 && matrix.clojure == '1.11.4'
+        run: clojure -M:test:coverage
       - name: Upload coverage to Codecov
+        if: matrix.java == 17 && matrix.clojure == '1.11.4'
         uses: codecov/codecov-action@v5
         with:
           files: ./target/coverage/codecov.json
