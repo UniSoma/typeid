@@ -1,0 +1,12 @@
+{:linters {:unresolved-symbol {:level :error}
+           :unused-binding {:level :warning}
+           :unused-namespace {:level :warning}
+           :unused-referred-var {:level :warning}
+           :type-mismatch {:level :warning}
+           :missing-docstring {:level :off}
+           :shadowed-var {:level :warning}
+           :redefined-var {:level :error}
+           :invalid-arity {:level :error}
+           :deprecated-var {:level :warning}}
+ :output {:pattern "{{level}} {{filename}}:{{row}}:{{col}} {{message}}"}
+ :skip-comments true}

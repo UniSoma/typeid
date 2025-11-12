@@ -1,0 +1,11 @@
+#kaocha/v1
+ {:tests
+  [{:id :unit
+    :test-paths ["test"]
+    :source-paths ["src"]}]
+
+  :color? true
+  :randomize? true
+  :fail-fast? false
+  :reporter kaocha.report.progress/report
+  :plugins [:kaocha.plugin/profiling :kaocha.plugin/capture-output]}

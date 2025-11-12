@@ -1,14 +1,16 @@
 <!--
 Sync Impact Report:
-Version: 1.0.0 (Initial Constitution)
+Version: 1.1.0 (Amendment - Zero Runtime Dependencies)
 Ratification Date: 2025-11-10
 Last Amended: 2025-11-10
 
 Changes:
-- Initial constitution created for TypeID Clojure library
-- 8 core principles defined (API Design, Code Quality, Compatibility, Types/Contracts, Performance, Build & Release, Testing, Observability)
-- Project-specific constraints for Clojure libraries established
-- Governance rules and versioning policy defined
+- MINOR version bump (principle materially expanded)
+- Amended Principle IV (Types & Contracts): Removed Malli as runtime dependency option
+- Validation must now use manual predicates (no external validation libraries at runtime)
+- Updated Technology Stack: Removed Malli from validation stack
+- Updated Constraints: Clarified zero external runtime dependencies (was ambiguous before)
+- Malli remains acceptable as dev/test dependency only
 
 Templates Status:
 ✅ plan-template.md - Reviewed, Constitution Check section aligns with principles
@@ -16,7 +18,11 @@ Templates Status:
 ✅ tasks-template.md - Reviewed, task categorization supports principle-driven development
 ✅ Command files - All speckit commands reviewed for consistency
 
-Follow-up Items: None - all placeholders resolved
+Follow-up Items:
+- Update plan.md to remove Malli from runtime dependencies
+- Update research.md validation strategy
+- Update data-model.md schemas (use manual predicates)
+- Update contracts/api.md (remove Malli schema references)
 -->
 
 # TypeID Clojure Library Constitution
@@ -59,12 +65,13 @@ Target environments MUST be explicitly stated and tested:
 
 Data shape validation and testing are MANDATORY:
 
-- **Malli (preferred) or clojure.spec**: All public entry points MUST validate input data shapes; validation failures MUST return clear error messages
+- **Manual validation predicates**: All public entry points MUST validate input data shapes using hand-written predicate functions (no external validation libraries at runtime); validation failures MUST return clear error messages
 - **Property-based tests with test.check**: Critical functions MUST have generative tests that verify properties hold across random inputs
-- **Schema documentation**: Data schemas MUST be documented in README and/or Codox
+- **Schema documentation**: Data schemas (as predicate specs) MUST be documented in README and/or Codox
 - **No silent failures**: Invalid data MUST fail fast with actionable error messages
+- **Optional dev/test validation libraries**: Malli, clojure.spec, or similar MAY be used in dev/test for generative testing or schema-based test generation, but MUST NOT be runtime dependencies
 
-**Rationale**: Runtime validation catches errors early. Property-based testing reveals edge cases unit tests miss. Clear schemas are executable specifications.
+**Rationale**: Runtime validation catches errors early. Manual predicates keep library dependency-free. Property-based testing reveals edge cases unit tests miss. Clear schemas (even as predicates) are executable specifications.
 
 ### V. Performance
 
@@ -127,8 +134,8 @@ This library implements the TypeID specification (version 0.3.0) for Clojure:
 
 - **Language**: Clojure 1.11+ (JVM)
 - **Optional**: ClojureScript and/or Babashka support (TBD)
-- **Validation**: Malli for schema validation
-- **Testing**: Kaocha + test.check
+- **Validation**: Manual predicate functions (no runtime dependencies)
+- **Testing**: Kaocha + test.check (dev dependencies only)
 - **Build**: deps.edn + tools.build
 - **CI**: GitHub Actions (or equivalent)
 
@@ -140,7 +147,7 @@ This library implements the TypeID specification (version 0.3.0) for Clojure:
 
 ### Constraints
 
-- **No external dependencies in runtime**: Keep dependency footprint minimal; Malli is acceptable for validation
+- **Zero external runtime dependencies**: Library MUST have zero runtime dependencies beyond org.clojure/clojure and org.clojure/clojurescript (no Malli, no clojure.spec, no external validation libraries)
 - **Base32 implementation**: Must match reference implementation bit-for-bit
 - **Spec compliance**: Must pass all test cases in valid.yml and invalid.yml from the reference spec
 
@@ -209,4 +216,4 @@ For runtime development assistance, agents (AI or human) should consult:
 - **typeid.md** for TypeID specification details
 - **Template files** in `.specify/templates/` for feature planning and task structure
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-10 | **Last Amended**: 2025-11-10
+**Version**: 1.1.0 | **Ratified**: 2025-11-10 | **Last Amended**: 2025-11-10

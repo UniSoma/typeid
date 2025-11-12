@@ -1,0 +1,46 @@
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Clojure
+.cpcache/
+.nrepl-port
+.nrepl-history
+.lein-*
+target/
+.clj-kondo/.cache/
+*.class
+*.jar
+*.log
+.env*
+node_modules/
+package-lock.json
+pom.xml
+pom.xml.asc
+docs/
+
+# ClojureScript
+.cljs_node_repl/
+out/
+.cpcache/
+
+# clojure-lsp
+.lsp/.cache
+\?
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

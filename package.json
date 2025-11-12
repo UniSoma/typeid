@@ -1,0 +1,10 @@
+{
+  "name": "typeid-cljs-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js dependencies for TypeID ClojureScript tests",
+  "dependencies": {},
+  "devDependencies": {
+    "ws": "^8.18.0"
+  }
+}
