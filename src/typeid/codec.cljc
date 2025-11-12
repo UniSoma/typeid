@@ -40,7 +40,7 @@
      ;;=> \"org_01h5fskfsk4fpeqwnsyz5hj55t\"
 
    See also: `decode`, `typeid.core/create`"
-  [uuid-bytes prefix]
+  ^String [uuid-bytes prefix]
   ;; Validate UUID bytes
   (when-not (v/valid-uuid-bytes? uuid-bytes)
     (throw (ex-info "UUID must be exactly 16 bytes"
@@ -84,7 +84,7 @@
      ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
 
    See also: `encode`, `typeid.core/parse`"
-  [typeid-str]
+  ^bytes [typeid-str]
   ;; Basic validations
   (when-not (string? typeid-str)
     (throw (ex-info "TypeID must be a string"
@@ -110,7 +110,7 @@
               :expected "lowercase string"
               :actual "contains uppercase characters"})))
 
-  (when (.startsWith typeid-str "_")
+  (when (.startsWith ^String typeid-str "_")
     (throw (ex-info "TypeID cannot start with underscore"
              {:type :typeid/invalid-format
               :message "TypeID cannot start with underscore"
@@ -185,7 +185,7 @@
      ;;=> #bytes[0x01 0x8c 0x3f 0x9e ...]  ; Uppercase accepted
 
    See also: `uuid->hex`"
-  [hex-string]
+  ^bytes [hex-string]
   (when-not (string? hex-string)
     (throw (ex-info "Hex string must be a string"
              {:type :typeid/invalid-input-type

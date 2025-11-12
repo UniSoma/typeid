@@ -19,6 +19,7 @@
 ;; REPL Utilities
 ;; ============================================================================
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn reload
   "Reload all changed namespaces."
   []
@@ -123,14 +124,14 @@
 
 (def sample-typeid
   "Sample TypeID for testing."
-  (:ok (typeid/generate "user")))
+  (:ok (typeid/create "user")))
 
 (defn generate-samples
   "Generate sample TypeIDs with different prefixes."
   []
   (into {}
     (map (fn [prefix]
-           (let [result (typeid/generate prefix)
+           (let [result (typeid/create prefix)
                  k (if (str/blank? prefix) :no-prefix (keyword prefix))]
              [k (:ok result)]))
       sample-prefixes)))
@@ -139,7 +140,7 @@
 ;; Welcome Message
 ;; ============================================================================
 
-(println "
+#_(println "
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║  TypeID Clojure Library - REPL Utilities Loaded              ║

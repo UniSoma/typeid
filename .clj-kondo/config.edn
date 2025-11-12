@@ -1,13 +1,21 @@
-{:linters {:unresolved-symbol {:level :error}
-           :unused-binding {:level :warning}
-           :unused-namespace {:level :warning}
-           :unused-referred-var {:level :warning}
-           :type-mismatch {:level :warning}
-           :missing-docstring {:level :off}
-           :shadowed-var {:level :warning}
-           :redefined-var {:level :error}
-           :invalid-arity {:level :error}
-           :deprecated-var {:level :warning}}
- :lint-as {clojure.test.check.clojure-test/defspec clojure.core/def}
+{:skip-comments true
  :output {:pattern "{{level}} {{filename}}:{{row}}:{{col}} {{message}}"}
- :skip-comments true}
+
+ :linters
+ {:unresolved-symbol {:level :error}
+  :unused-binding {:level :warning}
+  :unused-namespace {:level :warning}
+  :unused-referred-var {:level :warning}
+  :type-mismatch {:level :warning}
+  :missing-docstring {:level :off}
+  :shadowed-var {:level :warning}
+  :redefined-var {:level :error}
+  :invalid-arity {:level :error}
+  :deprecated-var {:level :warning}
+  :clojure-lsp/unused-public-var {:level :warning}}
+
+ :lint-as {clojure.test.check.clojure-test/defspec clojure.test/deftest}
+
+ :config-in-ns
+ {user
+  {:linters {:clojure-lsp/unused-public-var {:level :off}}}}}

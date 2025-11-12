@@ -3,6 +3,8 @@
     [typeid.impl.uuid :as uuid]
     [typeid.validation :as v]))
 
+#?(:clj (set! *warn-on-reflection* true))
+
 ;; T027: UUIDv7 generation tests
 
 (deftest generate-uuidv7-basic-test

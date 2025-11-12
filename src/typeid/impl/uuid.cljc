@@ -37,7 +37,7 @@
    - Bytes 8-15: Random data (64 bits)
 
    Returns a byte array of exactly 16 bytes."
-  []
+  ^bytes []
   (let [timestamp (current-timestamp-ms)
         rand-bytes (random-bytes 10) ;; 10 random bytes (80 bits)
         uuid-bytes #?(:clj (byte-array 16)
@@ -79,6 +79,7 @@
 
     uuid-bytes))
 
+#_{:clj-kondo/ignore [:shadowed-var]}
 (defn uuid->bytes
   "Convert a platform-native UUID object to a 16-byte array.
 

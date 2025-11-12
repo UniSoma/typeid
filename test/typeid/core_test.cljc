@@ -9,19 +9,21 @@
     [typeid.impl.uuid :as uuid]
     [typeid.validation :as v]))
 
+#?(:clj (set! *warn-on-reflection* true))
+
 ;; T023: Unit tests for create function
 (deftest create-with-prefix-test
   (testing "Generate TypeID with valid prefix"
     (let [typeid (t/create "user")]
       (is (string? typeid))
-      (is (= 31 (count typeid))) ; "user" (4) + "_" (1) + suffix (26)
+      (is (= 31 (count typeid)))        ; "user" (4) + "_" (1) + suffix (26)
       (is (.startsWith typeid "user_"))
       (is (= 26 (count (subs typeid 5)))))) ; suffix is 26 chars
 
   (testing "Generate TypeID with empty prefix"
     (let [typeid (t/create "")]
       (is (string? typeid))
-      (is (= 26 (count typeid))) ; just suffix, no prefix
+      (is (= 26 (count typeid)))              ; just suffix, no prefix
       (is (not (str/includes? typeid "_"))))) ; no separator
 
   (testing "Generate TypeID with various valid prefixes"
@@ -38,9 +40,9 @@
       (is (.startsWith id2 "user_"))))
 
   (testing "Generated TypeID suffix starts with 0-7"
-    (dotimes [_ 20] ; Test multiple times due to randomness
+    (dotimes [_ 20]                     ; Test multiple times due to randomness
       (let [typeid (t/create "test")
-            suffix (subs typeid 5) ; Skip "test_"
+            suffix (subs typeid 5)      ; Skip "test_"
             first-char (first suffix)]
         (is (contains? #{\0 \1 \2 \3 \4 \5 \6 \7} first-char)
           (str "First character of suffix must be 0-7, got: " first-char))))))
@@ -183,7 +185,6 @@
       (is (some? error))
       (is (= :typeid/invalid-suffix (:type error)))))
 
-  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
     (is (thrown? #?(:clj Exception :cljs js/Error)
           (t/parse 12345)))
@@ -248,7 +249,6 @@
       (is (some? error))
       (is (= :typeid/invalid-suffix (:type error)))))
 
-  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Reject non-string input"
     (let [error (t/explain 12345)]
       (is (some? error))
@@ -606,83 +606,80 @@
 
 (deftest create-two-arity-string-prefix-test
   (testing "Create TypeID from string prefix and UUID"
-    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
-          typeid (t/create "user" uuid)]
+    (let [the-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "user" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "user_"))
       (is (= 31 (count typeid)))
       ;; Parse back and verify UUID bytes match
       (let [parsed (t/parse typeid)
             parsed-uuid-bytes (:uuid parsed)
-            uuid-bytes (uuid/uuid->bytes uuid)]
+            uuid-bytes (uuid/uuid->bytes the-uuid)]
         (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
 
 (deftest create-two-arity-keyword-prefix-test
   (testing "Create TypeID from keyword prefix and UUID"
-    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
-          typeid (t/create :order uuid)]
+    (let [the-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create :order the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "order_"))
       (is (= 32 (count typeid)))))) ; "order" (5) + "_" (1) + suffix (26)
 
 (deftest create-two-arity-nil-prefix-test
   (testing "Create TypeID from nil prefix and UUID"
-    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
-          typeid (t/create nil uuid)]
+    (let [the-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create nil the-uuid)]
       (is (string? typeid))
       (is (= 26 (count typeid)))
       (is (not (str/includes? typeid "_")))
       ;; Parse back and verify UUID bytes match
       (let [parsed (t/parse typeid)
             parsed-uuid-bytes (:uuid parsed)
-            uuid-bytes (uuid/uuid->bytes uuid)]
+            uuid-bytes (uuid/uuid->bytes the-uuid)]
         (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
 
 (deftest create-uuid-versions-test
   (testing "Create accepts UUIDv7 (time-ordered)"
-    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
-          typeid (t/create "test" uuid)]
+    (let [the-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_"))))
 
   (testing "Create accepts UUIDv4 (random)"
-    (let [uuid #uuid "550e8400-e29b-41d4-a716-446655440000"
-          typeid (t/create "test" uuid)]
+    (let [the-uuid #uuid "550e8400-e29b-41d4-a716-446655440000"
+          typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_"))))
 
   (testing "Create accepts UUIDv1 (time-based)"
-    (let [uuid #uuid "c232ab00-9414-11ec-b3c8-9f68deced846"
-          typeid (t/create "test" uuid)]
+    (let [the-uuid #uuid "c232ab00-9414-11ec-b3c8-9f68deced846"
+          typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_")))))
 
 (deftest create-edge-case-uuids-test
   (testing "Create accepts all-zeros UUID"
-    (let [uuid #uuid "00000000-0000-0000-0000-000000000000"
-          typeid (t/create "test" uuid)]
+    (let [the-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_"))
       (is (= "test_00000000000000000000000000" typeid))))
 
   (testing "Create accepts all-ones UUID (max value)"
-    (let [uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
-          typeid (t/create "test" uuid)]
+    (let [the-uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_")))))
 
 (deftest create-invalid-uuid-type-test
-  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Create throws on non-UUID argument"
     (is (thrown? #?(:clj Exception :cljs js/Error)
           (t/create "user" "not-a-uuid"))))
 
-  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Create throws on number instead of UUID"
     (is (thrown? #?(:clj Exception :cljs js/Error)
           (t/create "user" 12345))))
 
-  #_{:clj-kondo/ignore [:type-mismatch]}
   (testing "Create throws on nil UUID in two-arity"
     (is (thrown? #?(:clj Exception :cljs js/Error)
           (t/create "user" nil)))))
@@ -729,14 +726,14 @@
    :seed 54321} ; Different seed from parse test
   (prop/for-all [prefix gen-valid-prefix]
     ;; Generate a UUID to use
-    (let [uuid #?(:clj (java.util.UUID/randomUUID)
-                  :cljs (random-uuid))
+    (let [the-uuid #?(:clj (java.util.UUID/randomUUID)
+                      :cljs (random-uuid))
           ;; Create TypeID from UUID
-          typeid (t/create (if (empty? prefix) nil prefix) uuid)
+          typeid (t/create (if (empty? prefix) nil prefix) the-uuid)
           ;; Parse it back
           parsed (t/parse typeid)
           parsed-uuid-bytes (:uuid parsed)
-          uuid-bytes (uuid/uuid->bytes uuid)]
+          uuid-bytes (uuid/uuid->bytes the-uuid)]
       ;; Verify round-trip consistency
       (and
        ;; Prefix should match

@@ -66,13 +66,13 @@
      ;;=> ExceptionInfo: {:type :typeid/invalid-uuid, ...}
 
    See also: `parse`, `explain`"
-  ([]
-    (create nil))
-  ([prefix]
+  (^String [] (create nil))
+  (^String [prefix]
    ;; Generate new UUIDv7 and encode
     (let [uuid-bytes (uuid/generate-uuidv7)]
       (codec/encode uuid-bytes prefix)))
-  ([prefix uuid]
+  #_{:clj-kondo/ignore [:shadowed-var]}
+  (^String [prefix uuid]
    ;; Convert UUID to bytes and encode
     (let [uuid-bytes (uuid/uuid->bytes uuid)]
       (codec/encode uuid-bytes prefix))))
@@ -180,7 +180,7 @@
      :actual "contains uppercase characters"}
 
     ;; Check doesn't start with underscore
-    (.startsWith input "_")
+    (.startsWith ^String input "_")
     {:type :typeid/invalid-format
      :message "TypeID cannot start with underscore"
      :input input}

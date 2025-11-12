@@ -7,7 +7,6 @@
 
 ;; T035: Error semantics test suite
 
-#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-structure-test
   (testing "All validation errors return consistent structure via explain"
     (let [errors [;; v/validate-prefix returns {:error {...}} structure
@@ -26,7 +25,6 @@
         (is (contains? error :message) "Error should have :message")
         (is (string? (:message error)) "Error :message should be string")))))
 
-#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-types-test
   (testing "Specific error types are returned for each validation failure"
     ;; Prefix validation errors (extract from {:error {...}} structure)
@@ -63,7 +61,6 @@
           (:type (t/explain "user_01h5fskfsk4fpeqwnsyz5hj5il")))
       "Suffix with invalid base32 chars should return :typeid/invalid-suffix")))
 
-#_{:clj-kondo/ignore [:type-mismatch]}
 (deftest error-data-completeness-test
   (testing "Error data includes relevant debugging information"
     ;; Prefix errors

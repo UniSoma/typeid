@@ -1,9 +1,9 @@
-{:deps {org.clojure/clojure {:mvn/version "1.11.1"}}
+{:deps {org.clojure/clojure {:mvn/version "1.12.3"}}
  ;; ZERO runtime dependencies beyond Clojure itself
 
  :aliases
  {:dev {:extra-deps {criterium/criterium {:mvn/version "0.4.6"}
-                     dev.weavejester/cljfmt {:mvn/version "0.12.0"}
+                     dev.weavejester/cljfmt {:mvn/version "0.15.3"}
                      org.clojure/tools.namespace {:mvn/version "1.5.0"}}
         :extra-paths ["dev"]}
 
@@ -19,20 +19,23 @@
                          "--codecov"
                          "--fail-threshold" "80"]}
 
-  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.11"}
                  slipset/deps-deploy {:mvn/version "0.2.2"}}
           :ns-default build}
 
-  :cljs {:extra-deps {org.clojure/clojurescript {:mvn/version "1.11.132"}
-                      lambdaisland/kaocha-cljs {:mvn/version "1.5.154"}}}
+  :cljs {:extra-deps {org.clojure/clojurescript {:mvn/version "1.12.42"}
+                      lambdaisland/kaocha-cljs {:mvn/version "1.8.163"}}}
 
   :codox {:extra-deps {codox/codox {:mvn/version "0.10.8"}}
           :exec-fn codox.main/generate-docs
           :exec-args {:output-path "docs"
                       :source-paths ["src"]}}
 
-  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
-         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test"]}
+  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2025.10.23"}}
+         :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "dev"]}
 
-  :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "1.4.0"}}
-          :main-opts ["-m" "nrepl.cmdline" "--interactive"]}}}
+  :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "1.5.1"}}
+          :main-opts ["-m" "nrepl.cmdline" "--interactive"]}
+
+  :outdated {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
+             :main-opts ["-m" "antq.core"]}}}
