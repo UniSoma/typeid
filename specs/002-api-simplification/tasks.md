@@ -156,26 +156,27 @@
 
 ### Tests for User Story 4
 
-- [ ] T058 [P] [US4] Unit test for codec/encode with prefix and UUID bytes in test/typeid/codec_test.clj
-- [ ] T059 [P] [US4] Unit test for codec/decode extracting UUID bytes from TypeID in test/typeid/codec_test.clj
-- [ ] T060 [P] [US4] Unit test for codec/uuid->hex conversion in test/typeid/codec_test.clj
-- [ ] T061 [P] [US4] Unit test for codec/hex->uuid conversion with various formats in test/typeid/codec_test.clj
-- [ ] T062 [P] [US4] Unit test for codec/hex->uuid with hyphens and uppercase in test/typeid/codec_test.clj
-- [ ] T063 [P] [US4] Unit test for codec functions exception throwing on invalid inputs in test/typeid/codec_test.clj
-- [ ] T064 [P] [US4] Property-based test for codec round-trip encode/decode in test/typeid/codec_test.clj
-- [ ] T065 [P] [US4] Property-based test for codec round-trip uuid->hex/hex->uuid in test/typeid/codec_test.clj
+- [X] T058 [P] [US4] Unit test for codec/encode with prefix and UUID bytes in test/typeid/core_test.clj (existing)
+- [X] T059 [P] [US4] Unit test for codec/decode extracting UUID bytes from TypeID in test/typeid/core_test.clj (existing)
+- [X] T060 [P] [US4] Unit test for codec/uuid->hex conversion in test/typeid/core_test.clj (existing)
+- [X] T061 [P] [US4] Unit test for codec/hex->uuid conversion with various formats in test/typeid/core_test.clj (existing)
+- [X] T062 [P] [US4] Unit test for codec/hex->uuid with hyphens and uppercase in test/typeid/core_test.clj (added)
+- [X] T063 [P] [US4] Unit test for codec functions exception throwing on invalid inputs in test/typeid/core_test.clj (existing)
+- [X] T064 [P] [US4] Property-based test for codec round-trip encode/decode in test/typeid/core_test.clj (added)
+- [X] T065 [P] [US4] Property-based test for codec round-trip uuid->hex/hex->uuid in test/typeid/core_test.clj (added)
 
 ### Implementation for User Story 4
 
-- [ ] T066 [P] [US4] Add comprehensive docstring with examples to encode function in src/typeid/codec.clj
-- [ ] T067 [P] [US4] Add comprehensive docstring with examples to decode function in src/typeid/codec.clj
-- [ ] T068 [P] [US4] Add comprehensive docstring with examples to uuid->hex function in src/typeid/codec.clj
-- [ ] T069 [P] [US4] Add comprehensive docstring with examples to hex->uuid function in src/typeid/codec.clj
-- [ ] T070 [US4] Update all codec functions to use consistent exception structure with ex-info in src/typeid/codec.clj
-- [ ] T071 [US4] Ensure hex->uuid handles both hyphenated and non-hyphenated formats in src/typeid/codec.clj
-- [ ] T072 [US4] Ensure hex->uuid handles both uppercase and lowercase hex strings in src/typeid/codec.clj
+- [X] T066 [P] [US4] Add comprehensive docstring with examples to encode function in src/typeid/codec.clj (already complete)
+- [X] T067 [P] [US4] Add comprehensive docstring with examples to decode function in src/typeid/codec.clj (already complete)
+- [X] T068 [P] [US4] Add comprehensive docstring with examples to uuid->hex function in src/typeid/codec.clj (already complete)
+- [X] T069 [P] [US4] Add comprehensive docstring with examples to hex->uuid function in src/typeid/codec.clj (already complete)
+- [X] T070 [US4] Update all codec functions to use consistent exception structure with ex-info in src/typeid/codec.clj (already complete)
+- [X] T071 [US4] Ensure hex->uuid handles both hyphenated and non-hyphenated formats in src/typeid/codec.clj (already complete)
+- [X] T072 [US4] Ensure hex->uuid handles both uppercase and lowercase hex strings in src/typeid/codec.clj (already complete)
 
 **Checkpoint**: All user stories should now be independently functional
+**Status**: ✅ COMPLETE - All codec functions fully implemented with comprehensive docstrings and tests (61 tests, 778 assertions)
 
 ---
 

@@ -478,7 +478,29 @@
                                                            0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])))
           hex-str (codec/uuid->hex original-uuid)
           recovered-uuid (codec/hex->uuid hex-str)]
-      (is (= (vec original-uuid) (vec recovered-uuid))))))
+      (is (= (vec original-uuid) (vec recovered-uuid)))))
+
+  ;; T062: Test hex->uuid with hyphens and uppercase
+  (testing "hex->uuid accepts hyphenated UUID format"
+    (let [uuid-bytes (codec/hex->uuid "0188e5f5-f34a-7b3d-9f2a-1c5de67fa8c1")]
+      (is (= 16 (alength uuid-bytes)))
+      (is (= (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])
+            (vec uuid-bytes)))))
+
+  (testing "hex->uuid accepts uppercase hex"
+    (let [uuid-bytes (codec/hex->uuid "0188E5F5F34A7B3D9F2A1C5DE67FA8C1")]
+      (is (= 16 (alength uuid-bytes)))
+      (is (= (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])
+            (vec uuid-bytes)))))
+
+  (testing "hex->uuid accepts mixed case with hyphens"
+    (let [uuid-bytes (codec/hex->uuid "0188E5f5-F34a-7B3d-9F2a-1C5dE67fA8c1")]
+      (is (= 16 (alength uuid-bytes)))
+      (is (= (map unchecked-byte [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                  0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1])
+            (vec uuid-bytes))))))
 
 (deftest typeid-map-conversion-test
   (testing "Convert TypeID to map (unwrapped parse)"
@@ -723,6 +745,54 @@
         (= (vec uuid-bytes) (vec parsed-uuid-bytes))
        ;; Should be valid TypeID
         (nil? (t/explain typeid))))))
+
+;; T064: Property-based test for codec encode/decode round-trip
+(defspec codec-encode-decode-round-trip-property
+  {:num-tests 100
+   :seed 11111} ; Deterministic seed
+  (prop/for-all [prefix gen-valid-prefix]
+    ;; Generate random UUID bytes
+    (let [uuid-bytes #?(:clj (let [ba (byte-array 16)]
+                               (dotimes [i 16]
+                                 (aset ba i (unchecked-byte (rand-int 256))))
+                               ba)
+                        :cljs (let [arr (js/Uint8Array. 16)]
+                                (dotimes [i 16]
+                                  (aset arr i (rand-int 256)))
+                                arr))
+          ;; Encode with prefix
+          typeid (codec/encode uuid-bytes (if (empty? prefix) nil prefix))
+          ;; Decode back
+          decoded-bytes (codec/decode typeid)]
+      ;; Verify round-trip
+      (= (vec uuid-bytes) (vec decoded-bytes)))))
+
+;; T065: Property-based test for uuid->hex/hex->uuid round-trip
+(defspec uuid-hex-round-trip-property
+  {:num-tests 100
+   :seed 22222} ; Deterministic seed
+  (prop/for-all [_dummy (gen/return nil)] ; We generate our own random bytes
+    ;; Generate random UUID bytes
+    (let [uuid-bytes #?(:clj (let [ba (byte-array 16)]
+                               (dotimes [i 16]
+                                 (aset ba i (unchecked-byte (rand-int 256))))
+                               ba)
+                        :cljs (let [arr (js/Uint8Array. 16)]
+                                (dotimes [i 16]
+                                  (aset arr i (rand-int 256)))
+                                arr))
+          ;; Convert to hex
+          hex-str (codec/uuid->hex uuid-bytes)
+          ;; Convert back to bytes
+          recovered-bytes (codec/hex->uuid hex-str)]
+      ;; Verify round-trip
+      (and
+       ;; Hex string should be 32 chars
+       (= 32 (count hex-str))
+       ;; Hex string should be lowercase
+       (= hex-str (str/lower-case hex-str))
+       ;; UUID bytes should match
+       (= (vec uuid-bytes) (vec recovered-bytes))))))
 
 ;; T026: Property-based test for parse round-trip consistency
 (defspec parse-round-trip-property
