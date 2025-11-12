@@ -25,17 +25,12 @@ jobs:
             ~/.m2/repository
             ~/.gitlibs
           key: clj-deps-${{ hashFiles('deps.edn') }}
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Run tests
         run: clojure -M:test -m kaocha.runner
       - name: Build jar
         run: clojure -T:build jar
       - name: Deploy SNAPSHOT to Clojars
-        run: clojure -T:build deploy
+        run: clojure -T:build deploy :sign false
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}

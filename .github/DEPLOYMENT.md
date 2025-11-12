@@ -23,22 +23,7 @@ Go to your GitHub repository settings → Secrets and variables → Actions → 
   4. Copy the token (starts with `CLOJARS_`)
   5. Use this token as the password (NOT your account password)
 
-#### 3. GPG_PRIVATE_KEY
-- **Value**: Your GPG private key in ASCII-armored format
-- **How to export it**:
-  ```bash
-  # List your keys to find the key ID
-  gpg --list-secret-keys --keyid-format=long
-
-  # Export your private key (replace KEY_ID with your actual key ID)
-  gpg --armor --export-secret-keys KEY_ID
-  ```
-- Copy the entire output including the `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END PGP PRIVATE KEY BLOCK-----` lines
-- Paste it as the secret value
-
-#### 4. GPG_PASSPHRASE
-- **Value**: The passphrase you used when creating your GPG key
-- **Security note**: This is stored encrypted in GitHub Secrets
+**Note**: GPG signing is disabled in CI deployments to avoid passphrase management issues. Artifacts are still secured via HTTPS and Clojars authentication. If you want to sign releases locally, you can do so manually.
 
 ## Deployment Workflows
 
@@ -111,15 +96,10 @@ After deployment completes:
 - Ensure you're using a deploy token, not your account password
 - Check the token hasn't expired
 
-### "gpg: signing failed: No secret key"
-- Verify `GPG_PRIVATE_KEY` secret contains the full private key
-- Ensure `GPG_PASSPHRASE` matches your key's passphrase
-- Check the key hasn't expired: `gpg --list-keys`
-
-### "Cannot invoke java.io.Console.readPassword"
-- This error occurs when GPG tries to prompt for a passphrase interactively
-- Ensure `GPG_PASSPHRASE` secret is set
-- The `crazy-max/ghaction-import-gpg` action handles this automatically
+### Build fails in CI
+- Check that all tests pass locally: `bb test`
+- Verify deps.edn is valid
+- Check GitHub Actions logs for specific error messages
 
 ### SNAPSHOT not updating
 - SNAPSHOT versions can take a few minutes to propagate
