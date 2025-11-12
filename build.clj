@@ -15,24 +15,31 @@
 (defn pom
   "Generate pom.xml for Maven/Clojars deployment."
   [_]
-  (b/write-pom {:class-dir class-dir
-                :lib lib
-                :version version
-                :basis @basis
-                :src-dirs ["src"]
-                :scm {:url "https://github.com/UniSoma/typeid"
-                      :connection "scm:git:git://github.com/UniSoma/typeid.git"
-                      :developerConnection "scm:git:ssh://git@github.com/UniSoma/typeid.git"
-                      :tag (str "v" version)}
-                :pom-data [[:description "Type-safe, K-sortable unique identifiers for Clojure/ClojureScript"]
-                           [:url "https://github.com/UniSoma/typeid"]
-                           [:licenses
-                            [:license
-                             [:name "MIT License"]
-                             [:url "https://opensource.org/licenses/MIT"]]]
-                           [:developers
-                            [:developer
-                             [:name "Jonas Rodrigues"]]]]}))
+  (let [basis-without-clojure (update @basis :libs dissoc 'org.clojure/clojure)]
+    (b/write-pom {:class-dir class-dir
+                  :lib lib
+                  :version version
+                  :basis basis-without-clojure
+                  :src-dirs ["src"]
+                  :scm {:url "https://github.com/UniSoma/typeid"
+                        :connection "scm:git:git://github.com/UniSoma/typeid.git"
+                        :developerConnection "scm:git:ssh://git@github.com/UniSoma/typeid.git"
+                        :tag (str "v" version)}
+                  :pom-data [[:description "Type-safe, K-sortable unique identifiers for Clojure/ClojureScript"]
+                             [:url "https://github.com/UniSoma/typeid"]
+                             [:licenses
+                              [:license
+                               [:name "MIT License"]
+                               [:url "https://opensource.org/licenses/MIT"]]]
+                             [:developers
+                              [:developer
+                               [:name "Jonas Rodrigues"]]]
+                             [:dependencies
+                              [:dependency
+                               [:groupId "org.clojure"]
+                               [:artifactId "clojure"]
+                               [:version "1.11.0"]
+                               [:scope "provided"]]]]})))
 
 (defn jar
   "Build library jar file."
