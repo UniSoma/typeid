@@ -74,7 +74,7 @@
    The first character must be 0-7 to ensure the decoded value fits in 128 bits.
 
    Throws ex-info if invalid format."
-  [^String base32-str]
+  ^bytes [^String base32-str]
   (when-not (= 26 (count base32-str))
     (throw (ex-info "Base32 suffix must be exactly 26 characters"
              {:type :invalid-suffix-length
@@ -109,7 +109,7 @@
                                                    :char ch
                                                    :position i})))]
                          (recur (inc i)
-                           (.add (.multiply acc (BigInteger/valueOf 32))
+                           (.add (.multiply ^BigInteger acc (BigInteger/valueOf 32))
                              (BigInteger/valueOf digit-val))))
                        acc))
            ;; Convert to byte array (16 bytes)

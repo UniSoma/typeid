@@ -5,9 +5,9 @@
     :test-paths ["test"]
     :source-paths ["src"]
     :cljs/timeout 10000
-    :cljs/repl-env cljs.repl.node/repl-env}]
+    :cljs/repl-env cljs.repl.node/repl-env
+    :cljs/compiler-options {:warnings {:undeclared-var {:exclude-from-regex "goog\\.math\\.Long"}}}}]
 
-  
   :color? true
   :fail-fast? false
   :randomize? true

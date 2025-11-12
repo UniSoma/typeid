@@ -12,7 +12,9 @@
 
    With reflection warnings check:
      clojure -M:dev -e \"(set! *warn-on-reflection* true) (require 'benchmarks.core-bench)\""
-  (:require [criterium.core :as crit]
+  (:require
+    [criterium.core :as crit]
+    [typeid.codec :as codec]
     [typeid.core :as typeid]
     [typeid.impl.base32 :as base32]
     [typeid.impl.uuid :as uuid]
@@ -56,14 +58,12 @@
 
 (def sample-typeid
   "Sample TypeID string for testing."
-  (let [{:keys [ok]} (typeid/generate "user")]
+  (let [{:keys [ok]} (typeid/create "user")]
     ok))
 
 (def sample-suffix
   "Sample base32 suffix for testing."
   (base32/encode sample-uuid-bytes))
-
-(def sample-prefix "user")
 
 ;; ============================================================================
 ;; Benchmarks
@@ -74,8 +74,8 @@
    Target: < 2μs total (2000ns)"
   []
   (run-benchmark
-    "typeid/generate"
-    #(typeid/generate "user")
+    "typeid/create"
+    #(typeid/create "user")
     2000))
 
 (defn bench-generate-no-prefix
@@ -83,8 +83,8 @@
    Target: < 2μs total (2000ns)"
   []
   (run-benchmark
-    "typeid/generate (no prefix)"
-    #(typeid/generate "")
+    "typeid/create (no prefix)"
+    #(typeid/create "")
     2000))
 
 (defn bench-parse
@@ -96,22 +96,13 @@
     #(typeid/parse sample-typeid)
     2000))
 
-(defn bench-validate
-  "Benchmark typeid.core/validate function.
-   Target: < 1μs (1000ns)"
-  []
-  (run-benchmark
-    "typeid/validate"
-    #(typeid/validate sample-typeid)
-    1000))
-
 (defn bench-encode
   "Benchmark typeid.core/encode function.
    Target: < 1μs (1000ns)"
   []
   (run-benchmark
     "typeid/encode"
-    #(typeid/encode sample-uuid-bytes "user")
+    #(codec/encode sample-uuid-bytes "user")
     1000))
 
 (defn bench-decode
@@ -120,7 +111,7 @@
   []
   (run-benchmark
     "typeid/decode"
-    #(typeid/decode sample-typeid)
+    #(codec/decode sample-typeid)
     1000))
 
 (defn bench-base32-encode
@@ -206,7 +197,6 @@
   (bench-generate)
   (bench-generate-no-prefix)
   (bench-parse)
-  (bench-validate)
   (bench-encode)
   (bench-decode)
 
