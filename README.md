@@ -2,7 +2,7 @@
 
 > Type-safe, K-sortable, globally unique identifiers inspired by Stripe IDs
 
-[![Clojars Project](https://img.shields.io/clojars/v/unisoma.agilis/typeid.svg)](https://clojars.org/unisoma.agilis/typeid)
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.unisoma/typeid.svg)](https://clojars.org/io.github.unisoma/typeid)
 [![CI](https://github.com/UniSoma/typeid/workflows/CI/badge.svg)](https://github.com/UniSoma/typeid/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -28,12 +28,12 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ### Clojure CLI (deps.edn)
 ```clojure
-{:deps {unisoma.agilis/typeid {:mvn/version "0.1.0"}}}
+{:deps {io.github.unisoma/typeid {:mvn/version "0.1.0"}}}
 ```
 
 ### Leiningen (project.clj)
 ```clojure
-[unisoma.agilis/typeid "0.1.0"]
+[io.github.unisoma/typeid "0.1.0"]
 ```
 
 ## Quick Start

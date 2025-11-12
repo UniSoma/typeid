@@ -32,7 +32,7 @@ Add to your `deps.edn`:
 
 ```clojure
 {:deps
- {unisoma.agilis/typeid {:mvn/version "0.1.0"}}}
+ {io.github.unisoma/typeid {:mvn/version "0.1.0"}}}
 ```
 
 ### Leiningen (project.clj)
@@ -40,7 +40,7 @@ Add to your `deps.edn`:
 Add to your `project.clj`:
 
 ```clojure
-:dependencies [[unisoma.agilis/typeid "0.1.0"]]
+:dependencies [[io.github.unisoma/typeid "0.1.0"]]
 ```
 
 ### ClojureScript

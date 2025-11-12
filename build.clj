@@ -1,7 +1,7 @@
 (ns build
   (:require [clojure.tools.build.api :as b]))
 
-(def lib 'unisoma.agilis/typeid)
+(def lib 'io.github.unisoma/typeid)
 (def version (or (System/getenv "RELEASE_VERSION") "0.1.0-SNAPSHOT"))
 (def class-dir "target/classes")
 (def basis (delay (b/create-basis {:project "deps.edn"})))
