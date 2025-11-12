@@ -142,7 +142,7 @@
 (println "
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║  TypeID Clojure Library - REPL Utilities Loaded             ║
+║  TypeID Clojure Library - REPL Utilities Loaded              ║
 ║                                                              ║
 ║  Quick start:                                                ║
 ║    (examples)    - Show usage examples                       ║
