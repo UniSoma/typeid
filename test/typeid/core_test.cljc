@@ -9,86 +9,86 @@
     [typeid.impl.uuid :as uuid]
     [typeid.validation :as v]))
 
-;; T023: Unit tests for generate function
-(deftest generate-with-prefix-test
+;; T023: Unit tests for create function
+(deftest create-with-prefix-test
   (testing "Generate TypeID with valid prefix"
-    (let [typeid (t/generate "user")]
+    (let [typeid (t/create "user")]
       (is (string? typeid))
       (is (= 31 (count typeid))) ; "user" (4) + "_" (1) + suffix (26)
       (is (.startsWith typeid "user_"))
       (is (= 26 (count (subs typeid 5)))))) ; suffix is 26 chars
 
   (testing "Generate TypeID with empty prefix"
-    (let [typeid (t/generate "")]
+    (let [typeid (t/create "")]
       (is (string? typeid))
       (is (= 26 (count typeid))) ; just suffix, no prefix
       (is (not (str/includes? typeid "_"))))) ; no separator
 
   (testing "Generate TypeID with various valid prefixes"
     (doseq [prefix ["a" "abc" "my_type" "user_account"]]
-      (let [typeid (t/generate prefix)]
+      (let [typeid (t/create prefix)]
         (is (.startsWith typeid (str prefix "_")))
         (is (= (+ (count prefix) 1 26) (count typeid))))))
 
   (testing "Generated TypeIDs are unique"
-    (let [id1 (t/generate "user")
-          id2 (t/generate "user")]
+    (let [id1 (t/create "user")
+          id2 (t/create "user")]
       (is (not= id1 id2))
       (is (.startsWith id1 "user_"))
       (is (.startsWith id2 "user_"))))
 
   (testing "Generated TypeID suffix starts with 0-7"
     (dotimes [_ 20] ; Test multiple times due to randomness
-      (let [typeid (t/generate "test")
+      (let [typeid (t/create "test")
             suffix (subs typeid 5) ; Skip "test_"
             first-char (first suffix)]
         (is (contains? #{\0 \1 \2 \3 \4 \5 \6 \7} first-char)
           (str "First character of suffix must be 0-7, got: " first-char))))))
 
-(deftest generate-with-invalid-prefix-test
+(deftest create-with-invalid-prefix-test
   (testing "Reject prefix with uppercase"
     (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
           #"(?i)prefix.*pattern|lowercase"
-          (t/generate "User"))))
+          (t/create "User"))))
 
   (testing "Reject prefix with numbers"
     (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
           #"(?i)prefix.*pattern"
-          (t/generate "user123"))))
+          (t/create "user123"))))
 
   (testing "Reject prefix that's too long"
     (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
           #"(?i)prefix.*63|too long"
-          (t/generate (apply str (repeat 64 "a"))))))
+          (t/create (apply str (repeat 64 "a"))))))
 
   (testing "Reject prefix starting with underscore"
     (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
           #"(?i)prefix.*pattern"
-          (t/generate "_user")))))
+          (t/create "_user")))))
 
-(deftest generate-with-no-args-test
+(deftest create-with-no-args-test
   (testing "Generate TypeID with no arguments"
-    (let [typeid (t/generate)]
+    (let [typeid (t/create)]
       (is (string? typeid))
       (is (= 26 (count typeid))) ; just suffix, no prefix
       (is (not (str/includes? typeid "_"))))) ; no separator
 
   (testing "Generate TypeID with nil prefix"
-    (let [typeid (t/generate nil)]
+    (let [typeid (t/create nil)]
       (is (string? typeid))
       (is (= 26 (count typeid))) ; just suffix, no prefix
       (is (not (str/includes? typeid "_"))))) ; no separator
 
   (testing "No-args and nil generate unique TypeIDs"
-    (let [id1 (t/generate)
-          id2 (t/generate nil)]
+    (let [id1 (t/create)
+          id2 (t/create nil)]
       (is (not= id1 id2))
       (is (= 26 (count id1)))
       (is (= 26 (count id2))))))
 
-(deftest generate-with-keyword-prefix-test
+(deftest create-with-keyword-prefix-test
   (testing "Generate TypeID with keyword prefix"
-    (let [typeid (t/generate :user)]
+    (let [typeid (t/create :user)]
       (is (string? typeid))
       (is (= 31 (count typeid))) ; "user" (4) + "_" (1) + suffix (26)
       (is (.startsWith typeid "user_"))
@@ -96,14 +96,14 @@
 
   (testing "Generate TypeID with various keyword prefixes"
     (doseq [prefix [:a :abc :my_type :user_account]]
-      (let [typeid (t/generate prefix)
+      (let [typeid (t/create prefix)
             prefix-str (name prefix)]
         (is (.startsWith typeid (str prefix-str "_")))
         (is (= (+ (count prefix-str) 1 26) (count typeid))))))
 
   (testing "Keyword and string prefixes produce same format"
-    (let [id1 (t/generate "user")
-          id2 (t/generate :user)]
+    (let [id1 (t/create "user")
+          id2 (t/create :user)]
       (is (not= id1 id2)) ; Different UUIDs
       (is (.startsWith id1 "user_"))
       (is (.startsWith id2 "user_"))
@@ -112,10 +112,10 @@
   (testing "Reject invalid keyword prefix"
     (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
           #"(?i)prefix.*pattern|lowercase"
-          (t/generate :User))))
+          (t/create :User))))
 
   (testing "Namespaced keyword uses name part only"
-    (let [typeid (t/generate :ns/user)]
+    (let [typeid (t/create :ns/user)]
       (is (string? typeid))
       (is (.startsWith typeid "user_")) ; namespace is ignored
       (is (= 31 (count typeid))))))
@@ -191,11 +191,11 @@
       (is (some? error))
       (is (= :typeid/invalid-input-type (:type error))))))
 
-(deftest generate-parse-round-trip-test
+(deftest create-parse-round-trip-test
   (testing "Generate and parse round-trip preserves data"
     (let [prefixes ["user" "order" "session" "" "a" "my_type"]]
       (doseq [prefix prefixes]
-        (let [typeid (t/generate prefix)
+        (let [typeid (t/create prefix)
               parsed (t/parse typeid)]
           (is (= prefix (:prefix parsed)))
           (is (= typeid (:typeid parsed)))
@@ -203,9 +203,9 @@
           (is (v/valid-uuid-bytes? (:uuid parsed)))))))
 
   (testing "Parse and re-generate produces different UUID but same prefix"
-    (let [typeid1 (t/generate "user")
+    (let [typeid1 (t/create "user")
           parsed1 (t/parse typeid1)
-          typeid2 (t/generate "user")
+          typeid2 (t/create "user")
           parsed2 (t/parse typeid2)]
       (is (= "user" (:prefix parsed1) (:prefix parsed2)))
       (is (not= typeid1 typeid2)) ; Different UUIDs
@@ -269,7 +269,7 @@
 (deftest edge-case-prefix-tests
   (testing "Maximum length prefix (63 characters)"
     (let [max-prefix (str "a" (apply str (repeat 61 "b")) "z") ; 63 chars: a + 61 b's + z
-          typeid (t/generate max-prefix)]
+          typeid (t/create max-prefix)]
       (is (string? typeid))
       (is (= (+ 63 1 26) (count typeid))) ; 63 prefix + 1 separator + 26 suffix
       (is (.startsWith typeid max-prefix))
@@ -283,7 +283,7 @@
 
   (testing "Consecutive underscores in prefix"
     (let [prefix "my__type__name" ; Multiple consecutive underscores
-          typeid (t/generate prefix)]
+          typeid (t/create prefix)]
       (is (string? typeid))
       (is (.startsWith typeid prefix))
 
@@ -296,19 +296,19 @@
 
   (testing "Prefix boundary characters"
     ;; Single character prefix (minimum non-empty)
-    (let [typeid-a (t/generate "a")]
+    (let [typeid-a (t/create "a")]
       (is (= 28 (count typeid-a))) ; 1 + 1 + 26
       (let [parsed (t/parse typeid-a)]
         (is (= "a" (:prefix parsed)))))
 
     ;; Two character prefix
-    (let [typeid-ab (t/generate "ab")]
+    (let [typeid-ab (t/create "ab")]
       (is (= 29 (count typeid-ab))) ; 2 + 1 + 26
       (let [parsed (t/parse typeid-ab)]
         (is (= "ab" (:prefix parsed)))))
 
     ;; Three character prefix (recommended minimum)
-    (let [typeid-abc (t/generate "abc")]
+    (let [typeid-abc (t/create "abc")]
       (is (= 30 (count typeid-abc))) ; 3 + 1 + 26
       (let [parsed (t/parse typeid-abc)]
         (is (= "abc" (:prefix parsed))))))
@@ -317,18 +317,18 @@
     ;; Valid: starts and ends with letter
     (let [valid-prefixes ["a" "ab" "a_b" "abc_def" "user_account_type"]]
       (doseq [prefix valid-prefixes]
-        (let [typeid (t/generate prefix)]
+        (let [typeid (t/create prefix)]
           (is (string? typeid) (str "Should generate TypeID for prefix: " prefix))
           (let [parsed (t/parse typeid)]
             (is (= prefix (:prefix parsed)))))))
 
     ;; Invalid: starts with underscore
     (is (thrown? #?(:clj Exception :cljs js/Error)
-          (t/generate "_invalid")))
+          (t/create "_invalid")))
 
     ;; Invalid: ends with underscore
     (is (thrown? #?(:clj Exception :cljs js/Error)
-          (t/generate "invalid_")))))
+          (t/create "invalid_")))))
 
 (deftest edge-case-suffix-tests
   (testing "Suffix boundary: first character must be 0-7"
@@ -371,7 +371,7 @@
 
   (testing "Maximum TypeID length (90 chars - 63 prefix + 1 sep + 26 suffix)"
     (let [max-prefix (str "a" (apply str (repeat 61 "b")) "z") ; 63 chars
-          max-typeid (t/generate max-prefix)
+          max-typeid (t/create max-prefix)
           parsed (t/parse max-typeid)]
       (is (= max-prefix (:prefix parsed)))
       (is (= 90 (count max-typeid)))))
@@ -526,7 +526,7 @@
       (is (= (vec original-uuid) (vec recovered-uuid)))))
 
   (testing "Generate→decode→encode round-trip"
-    (let [typeid1 (t/generate "session")
+    (let [typeid1 (t/create "session")
           uuid-bytes (codec/decode typeid1)
           typeid2 (codec/encode uuid-bytes "session")]
       ;; TypeIDs should be identical (same UUID)
@@ -714,14 +714,14 @@
   (gen/one-of
     [(gen/return "") ; Empty prefix
     ;; Single letter prefix (a-z)
-     (gen/fmap str (gen/elements (map char (range (int \a) (inc (int \z))))))
+     (gen/fmap str (gen/elements (map char (range 97 123))))
     ;; Multi-character prefix: starts with a-z, middle can be a-z or _, ends with a-z
      (gen/fmap (fn [[first-char middle-chars last-char]]
                  (str first-char (apply str middle-chars) last-char))
        (gen/tuple
-         (gen/elements (map char (range (int \a) (inc (int \z))))) ; First: a-z
-         (gen/vector (gen/elements (concat (map char (range (int \a) (inc (int \z)))) [\_])) 0 61) ; Middle: a-z or _
-         (gen/elements (map char (range (int \a) (inc (int \z)))))))]))
+         (gen/elements (map char (range 97 123))) ; First: a-z
+         (gen/vector (gen/elements (concat (map char (range 97 123)) [\_])) 0 60) ; Middle: a-z or _ (max 60 to allow first+last)
+         (gen/elements (map char (range 97 123)))))]))
 
 ;; T045: Property-based test for create round-trip with parse
 (defspec create-parse-round-trip-property
@@ -788,11 +788,11 @@
       ;; Verify round-trip
       (and
        ;; Hex string should be 32 chars
-       (= 32 (count hex-str))
+        (= 32 (count hex-str))
        ;; Hex string should be lowercase
-       (= hex-str (str/lower-case hex-str))
+        (= hex-str (str/lower-case hex-str))
        ;; UUID bytes should match
-       (= (vec uuid-bytes) (vec recovered-bytes))))))
+        (= (vec uuid-bytes) (vec recovered-bytes))))))
 
 ;; T026: Property-based test for parse round-trip consistency
 (defspec parse-round-trip-property
@@ -800,7 +800,7 @@
    :seed 12345} ; Deterministic seed for reproducibility
   (prop/for-all [prefix gen-valid-prefix]
     ;; Generate a TypeID with the given prefix
-    (let [typeid (t/generate prefix)
+    (let [typeid (t/create prefix)
           ;; Parse it back
           parsed (t/parse typeid)
           ;; Extract components

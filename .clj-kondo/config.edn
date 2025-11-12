@@ -8,5 +8,6 @@
            :redefined-var {:level :error}
            :invalid-arity {:level :error}
            :deprecated-var {:level :warning}}
+ :lint-as {clojure.test.check.clojure-test/defspec clojure.core/def}
  :output {:pattern "{{level}} {{filename}}:{{row}}:{{col}} {{message}}"}
  :skip-comments true}

@@ -96,15 +96,6 @@
     #(typeid/parse sample-typeid)
     2000))
 
-(defn bench-validate
-  "Benchmark typeid.core/validate function.
-   Target: < 1μs (1000ns)"
-  []
-  (run-benchmark
-    "typeid/validate"
-    #(typeid/validate sample-typeid)
-    1000))
-
 (defn bench-encode
   "Benchmark typeid.core/encode function.
    Target: < 1μs (1000ns)"
@@ -206,7 +197,6 @@
   (bench-generate)
   (bench-generate-no-prefix)
   (bench-parse)
-  (bench-validate)
   (bench-encode)
   (bench-decode)
 

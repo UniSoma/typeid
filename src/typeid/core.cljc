@@ -12,7 +12,7 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-;; User Story 3: Create function (replaces and extends generate)
+;; User Story 3: Create function
 (defn create
   "Create a TypeID with flexible options.
 
@@ -65,7 +65,7 @@
      (create \"user\" \"not-a-uuid\")
      ;;=> ExceptionInfo: {:type :typeid/invalid-uuid, ...}
 
-   See also: `parse`, `explain`, `generate` (deprecated)"
+   See also: `parse`, `explain`"
   ([]
     (create nil))
   ([prefix]
@@ -76,46 +76,6 @@
    ;; Convert UUID to bytes and encode
     (let [uuid-bytes (uuid/uuid->bytes uuid)]
       (codec/encode uuid-bytes prefix))))
-
-;; T029: Generate function (DEPRECATED - use create instead)
-(defn generate
-  "DEPRECATED: Use `create` instead.
-
-   Generate a new TypeID with the given prefix.
-
-   This function is deprecated in favor of `create` which provides the same
-   functionality with a more flexible API (supports creating from existing UUIDs).
-
-   The prefix can be:
-   - A string (0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?)
-   - A keyword (its name will be used as the prefix)
-   - nil or omitted (generates a prefix-less TypeID)
-
-   Generates a UUIDv7 (timestamp-based UUID) and encodes it as a base32 suffix.
-
-   Returns TypeID string like \"user_01h5fskfsk4fpeqwnsyz5hj55t\".
-
-   Throws ex-info if prefix is invalid.
-
-   Examples:
-     (generate \"user\")
-     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
-
-     (generate :user)
-     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
-
-     (generate nil)
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
-
-     (generate)
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
-
-     (generate \"\")
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
-
-   See also: `create` (preferred), `parse`, `validate`"
-  ([] (create))
-  ([prefix] (create prefix)))
 
 ;; T030: Parse function
 (defn parse
@@ -139,7 +99,7 @@
      (parse \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
      ;;=> ExceptionInfo: {:type :typeid/invalid-format, :message \"...\", ...}
 
-   See also: `explain` (for validation without exceptions), `generate`"
+   See also: `explain` (for validation without exceptions), `create`"
   [typeid-str]
   ;; Use codec/decode to validate and extract UUID bytes
   (let [uuid-bytes (codec/decode typeid-str)
@@ -185,7 +145,7 @@
      ;;     :expected \"string\"
      ;;     :actual \"number\"}
 
-   See also: `parse` (throws exception on invalid input), `generate`"
+   See also: `parse` (throws exception on invalid input), `create`"
   [input]
   (cond
     ;; Check if input is a string
@@ -254,19 +214,3 @@
         :else
         nil))))
 
-;; Legacy compatibility: Keep validate function that delegates to explain
-;; This maintains backward compatibility while the old validate function is deprecated
-(defn validate
-  "DEPRECATED: Use `explain` instead.
-
-   Validate a TypeID string without parsing it.
-   Returns {:ok true} on success, {:error error-map} on failure.
-
-   This function is deprecated in favor of `explain` which returns nil for valid
-   and error map for invalid (cleaner API).
-
-   See also: `explain`, `parse`"
-  [typeid-str]
-  (if-let [error (explain typeid-str)]
-    {:error error}
-    {:ok true}))

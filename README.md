@@ -39,41 +39,63 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 ## Quick Start
 
 ```clojure
-(require '[typeid.core :as t])
+(require '[typeid.core :as typeid])
 
-;; Generate a new TypeID with string prefix
-(t/generate "user")
+;; Create a new TypeID with a fresh UUIDv7
+(typeid/create "user")
 ;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
 
-;; Generate with keyword prefix (extracts name)
-(t/generate :user)
+;; Create with keyword prefix (extracts name)
+(typeid/create :user)
 ;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
 
-;; Generate without prefix (nil or no args)
-(t/generate nil)
+;; Create without prefix (nil or no args)
+(typeid/create nil)
 ;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
 
-(t/generate)
+(typeid/create)
 ;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
 
-;; Parse a TypeID
-(t/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
-;;=> {:ok {:prefix "user"
-;;         :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
-;;         :uuid #bytes[...]
-;;         :typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"}}
+;; Create TypeID from an existing UUID
+(typeid/create "user" #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+;;=> "user_01h455vb4pex5vsknk084sn02q"
 
-;; Validate a TypeID
-(t/validate "user_01h5fskfsk4fpeqwnsyz5hj55t")
-;;=> {:ok true}
+;; Validate a TypeID (returns nil if valid, error map if invalid)
+(typeid/explain "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> nil  ; Valid!
 
-;; Convert UUID to TypeID
-(t/encode my-uuid-bytes "user")
-;;=> {:ok "user_01h5fskfsk4fpeqwnsyz5hj55t"}
+(typeid/explain "User_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:type :typeid/invalid-prefix
+;;    :message "Invalid prefix: contains uppercase characters"
+;;    :input "User_01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :expected "lowercase alphanumeric characters (a-z, 0-9)"
+;;    :actual "uppercase 'U'"}
 
-;; Extract UUID from TypeID
-(t/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")
-;;=> {:ok #bytes[16 bytes]}
+;; Parse a TypeID into components (throws exception if invalid)
+(typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:prefix "user"
+;;    :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+;;    :typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"}
+
+;; Low-level codec operations (typeid.codec namespace)
+(require '[typeid.codec :as codec])
+
+;; Encode UUID bytes to TypeID
+(codec/encode uuid-bytes "user")
+;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
+
+;; Decode TypeID to UUID bytes
+(codec/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> #object["[B" ... (16-byte array)]
+
+;; Convert UUID bytes to hex string
+(codec/uuid->hex uuid-bytes)
+;;=> "018c3f9e9e4e7a8a8b2a7e8e9e4e7a8a"
+
+;; Convert hex string to UUID bytes
+(codec/hex->uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+;;=> #object["[B" ... (16-byte array)]
 ```
 
 ## Documentation
@@ -90,53 +112,185 @@ See Quick Start above for common patterns.
 
 ### Error Handling
 
-All functions return `{:ok result}` or `{:error error-map}`:
+The library uses two patterns for error handling:
+
+**1. Validation without exceptions (`explain`)**
+
+Use `explain` when you want to check validity without catching exceptions:
 
 ```clojure
-(t/parse "Invalid_8zzzzzzzzzzzzzzzzzzzzzzzzz")
-;;=> {:error {:type :suffix-overflow
-;;            :message "First character of suffix must be 0-7 to prevent overflow"
-;;            :data {:suffix "8zzzzzzzzzzzzzzzzzzzzzzzzz"
-;;                   :first-char \8
-;;                   :max-allowed-char \7}}}
+(require '[typeid.core :as typeid])
 
-(t/generate "InvalidPrefix")
-;; Throws ex-info with error map:
-;; {:type :invalid-prefix-format
-;;  :message "Prefix must be lowercase letters, digits, or underscores"
-;;  :data {:prefix "InvalidPrefix"}}
+;; Valid TypeID returns nil
+(typeid/explain "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> nil
+
+;; Invalid TypeID returns error map
+(typeid/explain "User_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:type :typeid/invalid-prefix
+;;    :message "Invalid prefix: contains uppercase characters"
+;;    :input "User_01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :expected "lowercase alphanumeric characters (a-z, 0-9)"
+;;    :actual "uppercase 'U'"}
+
+;; Gracefully handles non-string input
+(typeid/explain 12345)
+;;=> {:type :typeid/invalid-input-type
+;;    :message "Invalid input type: expected string"
+;;    :input 12345
+;;    :expected "string"
+;;    :actual "number"}
 ```
 
-### Validation Predicates
+**2. Exception-based (`parse`, `create`)**
+
+Functions like `parse` and `create` throw `ExceptionInfo` on invalid input:
 
 ```clojure
-(require '[typeid.validation :as v])
+;; Parse valid TypeID
+(typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:prefix "user", :suffix "...", :uuid #uuid "...", :typeid "..."}
 
-(v/valid-prefix? "user")        ;;=> true
-(v/valid-prefix? "User")        ;;=> false (must be lowercase)
+;; Invalid TypeID throws exception
+(try
+  (typeid/parse "invalid-typeid")
+  (catch Exception e
+    (ex-data e)))
+;;=> {:type :typeid/invalid-format
+;;    :message "Invalid format: does not match TypeID pattern"
+;;    :input "invalid-typeid"
+;;    :expected "TypeID format: [prefix_]suffix"}
 
-(v/valid-typeid-string? "user_01h5fskfsk4fpeqwnsyz5hj55t") ;;=> true
-(v/valid-uuid-bytes? my-bytes)  ;;=> true if 16 bytes
+;; Create with invalid prefix throws exception
+(try
+  (typeid/create "InvalidPrefix" #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+  (catch Exception e
+    (ex-data e)))
+;;=> {:type :typeid/invalid-prefix
+;;    :message "Invalid prefix: contains uppercase characters"
+;;    :input "InvalidPrefix"
+;;    :expected "lowercase alphanumeric characters (a-z, 0-9)"
+;;    :actual "uppercase 'I'"}
 ```
 
-### Working with UUIDs
+**Pattern: Validate before parsing (avoid exceptions)**
 
 ```clojure
+(defn safe-parse [input]
+  (if-let [error (typeid/explain input)]
+    {:error error}
+    {:success (typeid/parse input)}))
+
+(safe-parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:success {:prefix "user", ...}}
+
+(safe-parse "invalid")
+;;=> {:error {:type :typeid/invalid-format, ...}}
+```
+
+### Creating TypeIDs
+
+The `create` function has three arities:
+
+```clojure
+;; Zero-arity: Generate new TypeID with no prefix
+(typeid/create)
+;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
+
+;; One-arity: Generate new TypeID with prefix
+(typeid/create "user")
+;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
+
+(typeid/create :org)  ; Keyword prefix works too
+;;=> "org_01h5fskfsk4fpeqwnsyz5hj55t"
+
+;; Two-arity: Create TypeID from existing UUID
+(def my-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+
+(typeid/create "user" my-uuid)
+;;=> "user_01h455vb4pex5vsknk084sn02q"
+
+(typeid/create nil my-uuid)  ; No prefix
+;;=> "01h455vb4pex5vsknk084sn02q"
+
+;; Works with any UUID version
+(typeid/create "order" #uuid "550e8400-e29b-41d4-a716-446655440000")
+;;=> "order_2qeh85amd9ct4vr9px628gkdkr"
+```
+
+### Working with UUIDs and Codec Operations
+
+For low-level operations, use the `typeid.codec` namespace:
+
+```clojure
+(require '[typeid.codec :as codec])
+
 ;; Convert UUID bytes to hex string
-(t/uuid->hex uuid-bytes)
-;;=> {:ok "01890a5dac96774bbcceb302099a8057"}
+(def uuid-bytes (byte-array [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                              0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
 
-;; Convert hex string to UUID bytes
-(t/hex->uuid "01890a5dac96774bbcceb302099a8057")
-;;=> {:ok #bytes[...]}
+(codec/uuid->hex uuid-bytes)
+;;=> "018c3f9e9e4e7a8a8b2a7e8e9e4e7a8a"
 
-;; Get all TypeID components as a map
-(t/typeid->map "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;; Convert hex string to UUID bytes (accepts hyphens and uppercase)
+(codec/hex->uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+;;=> #object["[B" ... (16-byte array)]
+
+(codec/hex->uuid "018C3F9E9E4E7A8A8B2A7E8E9E4E7A8A")
+;;=> #object["[B" ... (same byte array)]
+
+;; Encode UUID bytes directly
+(codec/encode uuid-bytes "user")
+;;=> "user_01h455vb4pex5vsknk084sn02q"
+
+;; Decode TypeID to UUID bytes
+(codec/decode "user_01h455vb4pex5vsknk084sn02q")
+;;=> #object["[B" ... (16-byte array)]
+```
+
+### Parsing TypeIDs
+
+Extract components from a TypeID:
+
+```clojure
+;; Parse prefixed TypeID
+(typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
 ;;=> {:prefix "user"
 ;;    :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
-;;    :uuid #bytes[...]
+;;    :uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
 ;;    :typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"}
+
+;; Parse prefix-less TypeID
+(typeid/parse "01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:prefix ""
+;;    :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+;;    :typeid "01h5fskfsk4fpeqwnsyz5hj55t"}
+
+;; Use destructuring to extract specific fields
+(let [{:keys [prefix uuid]} (typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")]
+  (println "Type:" prefix)
+  (println "UUID:" uuid))
+;;=> Type: user
+;;=> UUID: 018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a
 ```
+
+## Migration Guide
+
+If you're upgrading from an earlier version that used the data-as-error pattern (`{:ok ...}` / `{:error ...}`), here's how to migrate to the new exception-based API:
+
+### API Changes Summary
+
+| Old Function | New Function | Change |
+|--------------|--------------|--------|
+| `validate` | `explain` | Now returns `nil` for valid, error map for invalid (no wrapping) |
+| `typeid->map` | `parse` | Now throws exception on invalid input (no `{:ok ...}` wrapping) |
+| `generate` | `create` | Renamed to `create` with enhanced functionality (2-arity support) |
+| N/A | `create` (2-arity) | **NEW**: Create TypeID from existing UUID |
+| `encode` | `codec/encode` | Moved to `typeid.codec` namespace |
+| `decode` | `codec/decode` | Moved to `typeid.codec` namespace |
+| `uuid->hex` | `codec/uuid->hex` | Moved to `typeid.codec` namespace |
+| `hex->uuid` | `codec/hex->uuid` | Moved to `typeid.codec` namespace |
 
 ## Performance
 
