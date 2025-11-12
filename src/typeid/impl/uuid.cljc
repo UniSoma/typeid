@@ -78,3 +78,64 @@
                (aset uuid-bytes (+ 9 i) (aget rand-bytes (+ 3 i)))))
 
     uuid-bytes))
+
+(defn uuid->bytes
+  "Convert a platform-native UUID object to a 16-byte array.
+
+   Accepts:
+   - JVM: java.util.UUID
+   - ClojureScript: cljs.core/UUID
+
+   Returns 16-byte array representation of the UUID.
+   Throws if input is not a valid UUID object."
+  [uuid]
+  #?(:clj
+     (if (instance? java.util.UUID uuid)
+       (let [uuid-bytes (byte-array 16)
+             msb (.getMostSignificantBits ^java.util.UUID uuid)
+             lsb (.getLeastSignificantBits ^java.util.UUID uuid)]
+         ;; Most significant bits (bytes 0-7)
+         (aset uuid-bytes 0 (unchecked-byte (bit-shift-right msb 56)))
+         (aset uuid-bytes 1 (unchecked-byte (bit-shift-right msb 48)))
+         (aset uuid-bytes 2 (unchecked-byte (bit-shift-right msb 40)))
+         (aset uuid-bytes 3 (unchecked-byte (bit-shift-right msb 32)))
+         (aset uuid-bytes 4 (unchecked-byte (bit-shift-right msb 24)))
+         (aset uuid-bytes 5 (unchecked-byte (bit-shift-right msb 16)))
+         (aset uuid-bytes 6 (unchecked-byte (bit-shift-right msb 8)))
+         (aset uuid-bytes 7 (unchecked-byte msb))
+         ;; Least significant bits (bytes 8-15)
+         (aset uuid-bytes 8 (unchecked-byte (bit-shift-right lsb 56)))
+         (aset uuid-bytes 9 (unchecked-byte (bit-shift-right lsb 48)))
+         (aset uuid-bytes 10 (unchecked-byte (bit-shift-right lsb 40)))
+         (aset uuid-bytes 11 (unchecked-byte (bit-shift-right lsb 32)))
+         (aset uuid-bytes 12 (unchecked-byte (bit-shift-right lsb 24)))
+         (aset uuid-bytes 13 (unchecked-byte (bit-shift-right lsb 16)))
+         (aset uuid-bytes 14 (unchecked-byte (bit-shift-right lsb 8)))
+         (aset uuid-bytes 15 (unchecked-byte lsb))
+         uuid-bytes)
+       (throw (ex-info "Invalid UUID: expected platform-native UUID object"
+                {:type :typeid/invalid-uuid
+                 :message "Invalid UUID type: expected java.util.UUID"
+                 :input uuid
+                 :expected "java.util.UUID"
+                 :actual (str (type uuid))})))
+     :cljs
+     (if (uuid? uuid)
+       ;; In ClojureScript, UUID objects are stored as strings internally
+       ;; We need to parse the hex string representation
+       (let [hex-str (str uuid)
+             ;; Remove hyphens from UUID string (e.g., "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a" -> "018c3f9e9e4e7a8a8b2a7e8e9e4e7a8a")
+             clean-hex (.replace hex-str (js/RegExp. "-" "g") "")
+             uuid-bytes (js/Uint8Array. 16)]
+         ;; Parse hex string to bytes
+         (dotimes [i 16]
+           (let [hex-byte (.substr clean-hex (* i 2) 2)
+                 byte-val (js/parseInt hex-byte 16)]
+             (aset uuid-bytes i byte-val)))
+         uuid-bytes)
+       (throw (ex-info "Invalid UUID: expected platform-native UUID object"
+                {:type :typeid/invalid-uuid
+                 :message "Invalid UUID type: expected cljs.core/UUID"
+                 :input uuid
+                 :expected "cljs.core/UUID"
+                 :actual (str (type uuid))})))))

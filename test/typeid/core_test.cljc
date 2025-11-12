@@ -6,6 +6,7 @@
     [clojure.test.check.properties :as prop]
     [typeid.codec :as codec]
     [typeid.core :as t]
+    [typeid.impl.uuid :as uuid]
     [typeid.validation :as v]))
 
 ;; T023: Unit tests for generate function
@@ -523,21 +524,207 @@
           parsed (t/parse typeid)]
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed))))))
 
-;; T026: Property-based test for parse round-trip consistency
+;; T034-T045: User Story 3 - Create TypeIDs with Flexible Options Tests
+
+(deftest create-zero-arity-test
+  (testing "Create TypeID with no arguments generates prefix-less TypeID"
+    (let [typeid (t/create)]
+      (is (string? typeid))
+      (is (= 26 (count typeid))) ; No prefix, just 26-char suffix
+      (is (not (str/includes? typeid "_"))))) ; No separator
+
+  (testing "Multiple zero-arity calls generate unique TypeIDs"
+    (let [id1 (t/create)
+          id2 (t/create)]
+      (is (not= id1 id2))
+      (is (= 26 (count id1)))
+      (is (= 26 (count id2))))))
+
+(deftest create-one-arity-string-test
+  (testing "Create TypeID with string prefix generates new UUID"
+    (let [typeid (t/create "user")]
+      (is (string? typeid))
+      (is (.startsWith typeid "user_"))
+      (is (= 31 (count typeid))))) ; "user" (4) + "_" (1) + suffix (26)
+
+  (testing "Create TypeID with empty string generates prefix-less TypeID"
+    (let [typeid (t/create "")]
+      (is (string? typeid))
+      (is (= 26 (count typeid)))
+      (is (not (str/includes? typeid "_")))))
+
+  (testing "Multiple one-arity calls with same prefix generate unique TypeIDs"
+    (let [id1 (t/create "user")
+          id2 (t/create "user")]
+      (is (not= id1 id2))
+      (is (.startsWith id1 "user_"))
+      (is (.startsWith id2 "user_")))))
+
+(deftest create-one-arity-keyword-test
+  (testing "Create TypeID with keyword prefix"
+    (let [typeid (t/create :user)]
+      (is (string? typeid))
+      (is (.startsWith typeid "user_"))
+      (is (= 31 (count typeid)))))
+
+  (testing "Keyword and string prefixes produce same format"
+    (let [id1 (t/create "order")
+          id2 (t/create :order)]
+      (is (not= id1 id2)) ; Different UUIDs
+      (is (.startsWith id1 "order_"))
+      (is (.startsWith id2 "order_"))
+      (is (= (count id1) (count id2))))))
+
+(deftest create-one-arity-nil-test
+  (testing "Create TypeID with nil prefix generates prefix-less TypeID"
+    (let [typeid (t/create nil)]
+      (is (string? typeid))
+      (is (= 26 (count typeid)))
+      (is (not (str/includes? typeid "_"))))))
+
+(deftest create-two-arity-string-prefix-test
+  (testing "Create TypeID from string prefix and UUID"
+    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "user" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "user_"))
+      (is (= 31 (count typeid)))
+      ;; Parse back and verify UUID bytes match
+      (let [parsed (t/parse typeid)
+            parsed-uuid-bytes (:uuid parsed)
+            uuid-bytes (uuid/uuid->bytes uuid)]
+        (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
+
+(deftest create-two-arity-keyword-prefix-test
+  (testing "Create TypeID from keyword prefix and UUID"
+    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create :order uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "order_"))
+      (is (= 32 (count typeid)))))) ; "order" (5) + "_" (1) + suffix (26)
+
+(deftest create-two-arity-nil-prefix-test
+  (testing "Create TypeID from nil prefix and UUID"
+    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create nil uuid)]
+      (is (string? typeid))
+      (is (= 26 (count typeid)))
+      (is (not (str/includes? typeid "_")))
+      ;; Parse back and verify UUID bytes match
+      (let [parsed (t/parse typeid)
+            parsed-uuid-bytes (:uuid parsed)
+            uuid-bytes (uuid/uuid->bytes uuid)]
+        (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
+
+(deftest create-uuid-versions-test
+  (testing "Create accepts UUIDv7 (time-ordered)"
+    (let [uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "test" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "test_"))))
+
+  (testing "Create accepts UUIDv4 (random)"
+    (let [uuid #uuid "550e8400-e29b-41d4-a716-446655440000"
+          typeid (t/create "test" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "test_"))))
+
+  (testing "Create accepts UUIDv1 (time-based)"
+    (let [uuid #uuid "c232ab00-9414-11ec-b3c8-9f68deced846"
+          typeid (t/create "test" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "test_")))))
+
+(deftest create-edge-case-uuids-test
+  (testing "Create accepts all-zeros UUID"
+    (let [uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "test" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "test_"))
+      (is (= "test_00000000000000000000000000" typeid))))
+
+  (testing "Create accepts all-ones UUID (max value)"
+    (let [uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          typeid (t/create "test" uuid)]
+      (is (string? typeid))
+      (is (.startsWith typeid "test_")))))
+
+(deftest create-invalid-uuid-type-test
+  #_{:clj-kondo/ignore [:type-mismatch]}
+  (testing "Create throws on non-UUID argument"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/create "user" "not-a-uuid"))))
+
+  #_{:clj-kondo/ignore [:type-mismatch]}
+  (testing "Create throws on number instead of UUID"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/create "user" 12345))))
+
+  #_{:clj-kondo/ignore [:type-mismatch]}
+  (testing "Create throws on nil UUID in two-arity"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+          (t/create "user" nil)))))
+
+(deftest create-invalid-prefix-test
+  (testing "Create throws on uppercase prefix"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+          #"(?i)prefix.*pattern|lowercase"
+          (t/create "User"))))
+
+  (testing "Create throws on prefix with numbers"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+          #"(?i)prefix.*pattern"
+          (t/create "user123"))))
+
+  (testing "Create throws on too-long prefix"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+          #"(?i)prefix.*63|too long"
+          (t/create (apply str (repeat 64 "a"))))))
+
+  (testing "Create throws on prefix starting with underscore"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+          #"(?i)prefix.*pattern"
+          (t/create "_user")))))
+
+;; Generator for valid TypeID prefixes (used by property-based tests)
 (def gen-valid-prefix
   "Generator for valid TypeID prefixes matching the pattern [a-z]([a-z_]{0,61}[a-z])?"
   (gen/one-of
-   [(gen/return "") ; Empty prefix
+    [(gen/return "") ; Empty prefix
     ;; Single letter prefix (a-z)
-    (gen/fmap str (gen/elements (map char (range (int \a) (inc (int \z))))))
+     (gen/fmap str (gen/elements (map char (range (int \a) (inc (int \z))))))
     ;; Multi-character prefix: starts with a-z, middle can be a-z or _, ends with a-z
-    (gen/fmap (fn [[first-char middle-chars last-char]]
-                (str first-char (apply str middle-chars) last-char))
-              (gen/tuple
-               (gen/elements (map char (range (int \a) (inc (int \z))))) ; First: a-z
-               (gen/vector (gen/elements (concat (map char (range (int \a) (inc (int \z)))) [\_ ])) 0 61) ; Middle: a-z or _
-               (gen/elements (map char (range (int \a) (inc (int \z)))))))]))
+     (gen/fmap (fn [[first-char middle-chars last-char]]
+                 (str first-char (apply str middle-chars) last-char))
+       (gen/tuple
+         (gen/elements (map char (range (int \a) (inc (int \z))))) ; First: a-z
+         (gen/vector (gen/elements (concat (map char (range (int \a) (inc (int \z)))) [\_])) 0 61) ; Middle: a-z or _
+         (gen/elements (map char (range (int \a) (inc (int \z)))))))]))
 
+;; T045: Property-based test for create round-trip with parse
+(defspec create-parse-round-trip-property
+  {:num-tests 100
+   :seed 54321} ; Different seed from parse test
+  (prop/for-all [prefix gen-valid-prefix]
+    ;; Generate a UUID to use
+    (let [uuid #?(:clj (java.util.UUID/randomUUID)
+                  :cljs (random-uuid))
+          ;; Create TypeID from UUID
+          typeid (t/create (if (empty? prefix) nil prefix) uuid)
+          ;; Parse it back
+          parsed (t/parse typeid)
+          parsed-uuid-bytes (:uuid parsed)
+          uuid-bytes (uuid/uuid->bytes uuid)]
+      ;; Verify round-trip consistency
+      (and
+       ;; Prefix should match
+        (= (if (empty? prefix) "" prefix) (:prefix parsed))
+       ;; UUID bytes should match
+        (= (vec uuid-bytes) (vec parsed-uuid-bytes))
+       ;; Should be valid TypeID
+        (nil? (t/explain typeid))))))
+
+;; T026: Property-based test for parse round-trip consistency
 (defspec parse-round-trip-property
   {:num-tests 100
    :seed 12345} ; Deterministic seed for reproducibility
@@ -552,12 +739,12 @@
       ;; Verify round-trip consistency
       (and
        ;; The parsed prefix should match the original (accounting for empty string vs "")
-       (= (if (empty? prefix) "" prefix) parsed-prefix)
+        (= (if (empty? prefix) "" prefix) parsed-prefix)
        ;; The parsed typeid should match the original
-       (= typeid parsed-typeid)
+        (= typeid parsed-typeid)
        ;; The suffix should be exactly 26 characters
-       (= 26 (count (:suffix parsed)))
+        (= 26 (count (:suffix parsed)))
        ;; The UUID should be valid (16 bytes)
-       (v/valid-uuid-bytes? (:uuid parsed))
+        (v/valid-uuid-bytes? (:uuid parsed))
        ;; Re-generating from the same UUID should produce the same TypeID
-       (= typeid (codec/encode (:uuid parsed) parsed-prefix))))))
+        (= typeid (codec/encode (:uuid parsed) parsed-prefix))))))

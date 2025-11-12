@@ -12,9 +12,79 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-;; T029: Generate function
+;; User Story 3: Create function (replaces and extends generate)
+(defn create
+  "Create a TypeID with flexible options.
+
+   Three arities:
+   1. Zero-arity: Generate new TypeID with no prefix
+   2. One-arity: Generate new TypeID with given prefix
+   3. Two-arity: Create TypeID from existing UUID with given prefix
+
+   The prefix can be:
+   - A string (0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?)
+   - A keyword (its name will be used as the prefix)
+   - nil or empty string (generates a prefix-less TypeID)
+
+   The uuid (two-arity only) must be a platform-native UUID object:
+   - JVM: java.util.UUID
+   - ClojureScript: cljs.core/UUID
+
+   Accepts any UUID version (v1, v4, v7, etc.) and edge cases (all-zeros, all-ones).
+
+   Returns TypeID string like \"user_01h5fskfsk4fpeqwnsyz5hj55t\".
+
+   Throws ExceptionInfo with structured error data if prefix or UUID is invalid.
+
+   Examples:
+     ;; Zero-arity (new TypeID, no prefix)
+     (create)
+     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     ;; One-arity (new TypeID with prefix)
+     (create \"user\")
+     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     (create :user)
+     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     (create nil)
+     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+
+     ;; Two-arity (from existing UUID)
+     (create \"user\" #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
+     ;;=> \"user_01h455vb4pex5vsknk084sn02q\"
+
+     (create nil #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
+     ;;=> \"01h455vb4pex5vsknk084sn02q\"
+
+     ;; Invalid inputs throw exceptions
+     (create \"User\")
+     ;;=> ExceptionInfo: {:type :typeid/invalid-prefix, ...}
+
+     (create \"user\" \"not-a-uuid\")
+     ;;=> ExceptionInfo: {:type :typeid/invalid-uuid, ...}
+
+   See also: `parse`, `explain`, `generate` (deprecated)"
+  ([]
+    (create nil))
+  ([prefix]
+   ;; Generate new UUIDv7 and encode
+    (let [uuid-bytes (uuid/generate-uuidv7)]
+      (codec/encode uuid-bytes prefix)))
+  ([prefix uuid]
+   ;; Convert UUID to bytes and encode
+    (let [uuid-bytes (uuid/uuid->bytes uuid)]
+      (codec/encode uuid-bytes prefix))))
+
+;; T029: Generate function (DEPRECATED - use create instead)
 (defn generate
-  "Generate a new TypeID with the given prefix.
+  "DEPRECATED: Use `create` instead.
+
+   Generate a new TypeID with the given prefix.
+
+   This function is deprecated in favor of `create` which provides the same
+   functionality with a more flexible API (supports creating from existing UUIDs).
 
    The prefix can be:
    - A string (0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?)
@@ -43,12 +113,9 @@
      (generate \"\")
      ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
-   See also: `parse`, `validate`"
-  ([] (generate ""))
-  ([prefix]
-   ;; Generate UUIDv7 and encode using codec
-    (let [uuid-bytes (uuid/generate-uuidv7)]
-      (codec/encode uuid-bytes prefix))))
+   See also: `create` (preferred), `parse`, `validate`"
+  ([] (create))
+  ([prefix] (create prefix)))
 
 ;; T030: Parse function
 (defn parse
