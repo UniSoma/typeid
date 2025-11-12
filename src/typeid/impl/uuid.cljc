@@ -1,4 +1,4 @@
-(ns typeid.impl.uuid
+(ns ^:no-doc typeid.impl.uuid
   "UUIDv7 generation with platform-specific time and random sources."
   #?(:clj (:import [java.security SecureRandom])))
 

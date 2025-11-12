@@ -1,4 +1,4 @@
-(ns typeid.impl.util
+(ns ^:no-doc typeid.impl.util
   "Shared utility functions for TypeID implementation.")
 
 #?(:clj (set! *warn-on-reflection* true))

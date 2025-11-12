@@ -1,4 +1,4 @@
-(ns typeid.impl.base32
+(ns ^:no-doc typeid.impl.base32
   "Base32 encoding/decoding using Crockford alphabet for TypeID suffixes.
 
    The Crockford base32 alphabet excludes ambiguous characters (i, l, o, u)
