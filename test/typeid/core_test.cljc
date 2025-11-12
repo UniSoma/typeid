@@ -1,5 +1,6 @@
 (ns typeid.core-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.string :as str]
+    [clojure.test :refer [deftest is testing]]
     [typeid.core :as t]
     [typeid.validation :as v]))
 
@@ -16,7 +17,7 @@
     (let [typeid (t/generate "")]
       (is (string? typeid))
       (is (= 26 (count typeid))) ; just suffix, no prefix
-      (is (not (.contains typeid "_"))))) ; no separator
+      (is (not (str/includes? typeid "_"))))) ; no separator
 
   (testing "Generate TypeID with various valid prefixes"
     (doseq [prefix ["a" "abc" "my_type" "user_account"]]

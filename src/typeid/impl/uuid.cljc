@@ -52,8 +52,9 @@
               (aset uuid-bytes 4 (unchecked-byte (bit-shift-right timestamp 8)))
               (aset uuid-bytes 5 (unchecked-byte timestamp)))
        :cljs (do
-               (aset uuid-bytes 0 (bit-shift-right timestamp 40))
-               (aset uuid-bytes 1 (bit-and (bit-shift-right timestamp 32) 0xFF))
+               ;; JavaScript bitwise ops are 32-bit, so use division for high bytes
+               (aset uuid-bytes 0 (js/Math.floor (/ timestamp 1099511627776)))  ; / 2^40
+               (aset uuid-bytes 1 (bit-and (js/Math.floor (/ timestamp 4294967296)) 0xFF))  ; / 2^32
                (aset uuid-bytes 2 (bit-and (bit-shift-right timestamp 24) 0xFF))
                (aset uuid-bytes 3 (bit-and (bit-shift-right timestamp 16) 0xFF))
                (aset uuid-bytes 4 (bit-and (bit-shift-right timestamp 8) 0xFF))

@@ -46,23 +46,26 @@
        (.reverse sb)
        (.toString sb))
      :cljs
-     ;; ClojureScript version: simpler bit manipulation
-     (let [result (atom [])]
-       (loop [i 0]
-         (when (< i 26)
-           (let [bit-start (* i 5)
-                 byte-idx (quot bit-start 8)
-                 bit-offset (rem bit-start 8)
-                 byte1 (if (< byte-idx 16) (aget uuid-bytes byte-idx) 0)
-                 byte2 (if (< (inc byte-idx) 16) (aget uuid-bytes (inc byte-idx)) 0)
-                 ;; Extract 5 bits
-                 bits (bit-and 0x1F
-                        (bit-or (bit-shift-right byte1 (- 8 bit-offset 5))
-                          (bit-shift-right (bit-shift-left byte2 8) (- 8 bit-offset 5))))
-                 ch (.charAt encode-alphabet bits)]
-             (swap! result conj ch)
-             (recur (inc i)))))
-       (apply str @result))))
+     ;; ClojureScript: Use BigInt for encoding (similar to JVM BigInteger)
+     (let [;; Convert bytes to BigInt (big-endian)
+           big-int (loop [i 0
+                          acc (js/BigInt 0)]
+                     (if (< i 16)
+                       (let [byte-val (js/BigInt (bit-and (aget uuid-bytes i) 0xFF))]
+                         (recur (inc i)
+                           (+ (* acc (js/BigInt 256)) byte-val)))
+                       acc))
+           ;; Extract each 5-bit group from right to left
+           chrs (loop [n big-int
+                       result []]
+                  (if (< (count result) 26)
+                    (let [remainder (js/Number (js* "~{} % 32n" n))
+                          ch (.charAt encode-alphabet remainder)]
+                      (recur (js* "~{} / 32n" n)
+                        (conj result ch)))
+                    result))]
+       ;; Reverse to get correct order
+       (apply str (reverse chrs)))))
 
 ;; T016: Decode function (26-char base32 string → UUID bytes)
 (defn decode
@@ -121,27 +124,26 @@
                  (System/arraycopy byte-arr 1 result 0 16)
                  result)))
      :cljs
-     ;; ClojureScript: Simple implementation
-     (let [uuid-bytes (js/Uint8Array. 16)]
-       (loop [char-idx 0
-              acc 0
-              acc-bits 0]
-         (if (< char-idx 26)
-           (let [ch (.charAt base32-str char-idx)
-                 digit-val (or (get decode-map ch)
-                             (throw (ex-info "Invalid base32 character"
-                                      {:type :invalid-base32-char
-                                       :char ch
-                                       :position char-idx})))
-                 new-acc (bit-or (bit-shift-left acc 5) digit-val)
-                 new-bits (+ acc-bits 5)]
-             (if (>= new-bits 8)
-               (let [byte-val (bit-and (bit-shift-right new-acc (- new-bits 8)) 0xFF)
-                     byte-idx (quot (- (* 26 5) new-bits) 8)]
-                 (when (< byte-idx 16)
-                   (aset uuid-bytes byte-idx byte-val))
-                 (recur (inc char-idx)
-                   (bit-and new-acc (dec (bit-shift-left 1 (- new-bits 8))))
-                   (- new-bits 8)))
-               (recur (inc char-idx) new-acc new-bits)))
-           uuid-bytes)))))
+     ;; ClojureScript: Use BigInt for decoding (similar to JVM BigInteger)
+     (let [;; Convert base32 string to BigInt
+           big-int (loop [i 0
+                          acc (js/BigInt 0)]
+                     (if (< i 26)
+                       (let [ch (.charAt base32-str i)
+                             v (or (get decode-map ch)
+                                 (throw (ex-info "Invalid base32 character"
+                                          {:type :invalid-base32-char
+                                           :char ch
+                                           :position i})))]
+                         (recur (inc i)
+                           (+ (* acc (js/BigInt 32)) (js/BigInt v))))
+                       acc))
+           ;; Convert BigInt to bytes
+           uuid-bytes (js/Uint8Array. 16)]
+       ;; Extract bytes from BigInt (big-endian, right to left)
+       (loop [i 15
+              n big-int]
+         (when (>= i 0)
+           (aset uuid-bytes i (js/Number (js* "~{} % 256n" n)))
+           (recur (dec i) (js* "~{} / 256n" n))))
+       uuid-bytes)))

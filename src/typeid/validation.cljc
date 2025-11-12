@@ -61,7 +61,9 @@
   [s]
   (and (string? s)
     (= 26 (count s))
-    (<= (int (first s)) (int \7))
+    #?(:clj  (<= (int (first s)) (int \7))
+       :cljs (let [first-char (.charAt s 0)]
+               (<= (.charCodeAt first-char 0) (.charCodeAt "7" 0))))
     (every? base32-chars s)))
 
 (defn valid-typeid-string?

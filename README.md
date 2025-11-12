@@ -43,7 +43,7 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ;; Generate a new TypeID
 (t/generate "user")
-;;=> {:ok "user_01h5fskfsk4fpeqwnsyz5hj55t"}
+;;=> "user_01h5fskfsk4fpeqwnsyz5hj55t"
 
 ;; Parse a TypeID
 (t/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
@@ -90,10 +90,10 @@ All functions return `{:ok result}` or `{:error error-map}`:
 ;;                   :max-allowed-char \7}}}
 
 (t/generate "InvalidPrefix")
-;;=> {:error {:type :prefix-invalid-chars
-;;            :message "Prefix must be lowercase alphanumeric"
-;;            :data {:prefix "InvalidPrefix"
-;;                   :invalid-chars [\I \P]}}}
+;; Throws ex-info with error map:
+;; {:type :invalid-prefix-format
+;;  :message "Prefix must be lowercase letters, digits, or underscores"
+;;  :data {:prefix "InvalidPrefix"}}
 ```
 
 ### Validation Predicates
@@ -113,19 +113,18 @@ All functions return `{:ok result}` or `{:error error-map}`:
 ```clojure
 ;; Convert UUID bytes to hex string
 (t/uuid->hex uuid-bytes)
-;;=> {:ok "01890a5d-ac96-774b-bcce-b302099a8057"}
+;;=> {:ok "01890a5dac96774bbcceb302099a8057"}
 
 ;; Convert hex string to UUID bytes
-(t/hex->uuid "01890a5d-ac96-774b-bcce-b302099a8057")
+(t/hex->uuid "01890a5dac96774bbcceb302099a8057")
 ;;=> {:ok #bytes[...]}
 
 ;; Get all TypeID components as a map
 (t/typeid->map "user_01h5fskfsk4fpeqwnsyz5hj55t")
-;;=> {:ok {:prefix "user"
-;;         :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
-;;         :uuid #bytes[...]
-;;         :uuid-hex "01890a5d-ac96-774b-bcce-b302099a8057"
-;;         :typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"}}
+;;=> {:prefix "user"
+;;    :suffix "01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :uuid #bytes[...]
+;;    :typeid "user_01h5fskfsk4fpeqwnsyz5hj55t"}
 ```
 
 ## Performance

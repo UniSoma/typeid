@@ -13,10 +13,10 @@
    With reflection warnings check:
      clojure -M:dev -e \"(set! *warn-on-reflection* true) (require 'benchmarks.core-bench)\""
   (:require [criterium.core :as crit]
-            [typeid.core :as typeid]
-            [typeid.impl.base32 :as base32]
-            [typeid.impl.uuid :as uuid]
-            [typeid.validation :as v]))
+    [typeid.core :as typeid]
+    [typeid.impl.base32 :as base32]
+    [typeid.impl.uuid :as uuid]
+    [typeid.validation :as v]))
 
 (set! *warn-on-reflection* true)
 
@@ -244,5 +244,4 @@
   ;; Run individual benchmarks
   (bench-generate)
   (bench-base32-encode)
-  (bench-prefix-validation)
-  )
+  (bench-prefix-validation))

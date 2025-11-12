@@ -44,12 +44,27 @@
           after-ms #?(:clj (System/currentTimeMillis)
                       :cljs (.now js/Date))
           ;; Extract timestamp from first 48 bits (6 bytes)
-          ts-bytes (take 6 uuid-bytes)
-          timestamp (reduce (fn [acc b]
-                              (+ (* acc 256)
-                                (bit-and #?(:clj b :cljs b) 0xFF)))
-                      0
-                      ts-bytes)]
+          timestamp #?(:clj (loop [i 0
+                                   acc 0]
+                              (if (< i 6)
+                                (let [byte-val (bit-and (aget uuid-bytes i) 0xFF)]
+                                  (recur (inc i)
+                                    (+ (* acc 256) byte-val)))
+                                acc))
+                       :cljs (let [b0 (bit-and (aget uuid-bytes 0) 0xFF)
+                                   b1 (bit-and (aget uuid-bytes 1) 0xFF)
+                                   b2 (bit-and (aget uuid-bytes 2) 0xFF)
+                                   b3 (bit-and (aget uuid-bytes 3) 0xFF)
+                                   b4 (bit-and (aget uuid-bytes 4) 0xFF)
+                                   b5 (bit-and (aget uuid-bytes 5) 0xFF)]
+                               ;; Build 48-bit timestamp from bytes (big-endian)
+                               ;; JavaScript can handle integers up to 2^53-1 safely
+                               (+ (+ (* b0 1099511627776)  ; 2^40
+                                    (* b1 4294967296))    ; 2^32
+                                 (+ (* b2 16777216)       ; 2^24
+                                   (* b3 65536))         ; 2^16
+                                 (+ (* b4 256)            ; 2^8
+                                   b5))))]
       (is (>= timestamp before-ms)
         (str "UUID timestamp " timestamp " should be >= " before-ms))
       (is (<= timestamp after-ms)
@@ -58,14 +73,25 @@
   (testing "UUIDs generated in sequence have increasing timestamps or same timestamp"
     (let [uuid1 (uuid/generate-uuidv7)
           uuid2 (uuid/generate-uuidv7)
-          ts1 (reduce (fn [acc b]
-                        (+ (* acc 256) (bit-and #?(:clj b :cljs b) 0xFF)))
-                0
-                (take 6 uuid1))
-          ts2 (reduce (fn [acc b]
-                        (+ (* acc 256) (bit-and #?(:clj b :cljs b) 0xFF)))
-                0
-                (take 6 uuid2))]
+          extract-ts (fn [uuid-bytes]
+                       #?(:clj (reduce (fn [acc b]
+                                         (+ (* acc 256) (bit-and b 0xFF)))
+                                 0
+                                 (take 6 uuid-bytes))
+                          :cljs (let [b0 (bit-and (aget uuid-bytes 0) 0xFF)
+                                      b1 (bit-and (aget uuid-bytes 1) 0xFF)
+                                      b2 (bit-and (aget uuid-bytes 2) 0xFF)
+                                      b3 (bit-and (aget uuid-bytes 3) 0xFF)
+                                      b4 (bit-and (aget uuid-bytes 4) 0xFF)
+                                      b5 (bit-and (aget uuid-bytes 5) 0xFF)]
+                                  (+ (+ (* b0 1099511627776)  ; 2^40
+                                       (* b1 4294967296))    ; 2^32
+                                    (+ (* b2 16777216)       ; 2^24
+                                      (* b3 65536))         ; 2^16
+                                    (+ (* b4 256)            ; 2^8
+                                      b5)))))
+          ts1 (extract-ts uuid1)
+          ts2 (extract-ts uuid2)]
       ;; ts2 should be >= ts1 (same millisecond or later)
       (is (>= ts2 ts1)
         (str "Second UUID timestamp " ts2 " should be >= first " ts1)))))
