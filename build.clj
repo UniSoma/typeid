@@ -1,5 +1,7 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]))
+  (:require
+    [clojure.string :as str]
+    [clojure.tools.build.api :as b]))
 
 (def lib 'io.github.unisoma/typeid)
 (def version (or (System/getenv "RELEASE_VERSION") "0.1.0-SNAPSHOT"))
@@ -15,31 +17,33 @@
 (defn pom
   "Generate pom.xml for Maven/Clojars deployment."
   [_]
-  (let [basis-without-clojure (update @basis :libs dissoc 'org.clojure/clojure)]
-    (b/write-pom {:class-dir class-dir
-                  :lib lib
-                  :version version
-                  :basis basis-without-clojure
-                  :src-dirs ["src"]
-                  :scm {:url "https://github.com/UniSoma/typeid"
-                        :connection "scm:git:git://github.com/UniSoma/typeid.git"
-                        :developerConnection "scm:git:ssh://git@github.com/UniSoma/typeid.git"
-                        :tag (str "v" version)}
-                  :pom-data [[:description "Type-safe, K-sortable unique identifiers for Clojure/ClojureScript"]
-                             [:url "https://github.com/UniSoma/typeid"]
-                             [:licenses
-                              [:license
-                               [:name "MIT License"]
-                               [:url "https://opensource.org/licenses/MIT"]]]
-                             [:developers
-                              [:developer
-                               [:name "Jonas Rodrigues"]]]
-                             [:dependencies
-                              [:dependency
-                               [:groupId "org.clojure"]
-                               [:artifactId "clojure"]
-                               [:version "1.11.0"]
-                               [:scope "provided"]]]]})))
+  ;; Generate standard POM first
+  (b/write-pom {:class-dir class-dir
+                :lib lib
+                :version version
+                :basis @basis
+                :src-dirs ["src"]
+                :scm {:url "https://github.com/UniSoma/typeid"
+                      :connection "scm:git:git://github.com/UniSoma/typeid.git"
+                      :developerConnection "scm:git:ssh://git@github.com/UniSoma/typeid.git"
+                      :tag (str "v" version)}
+                :pom-data [[:description "Type-safe, K-sortable unique identifiers for Clojure/ClojureScript"]
+                           [:url "https://github.com/UniSoma/typeid"]
+                           [:licenses
+                            [:license
+                             [:name "MIT License"]
+                             [:url "https://opensource.org/licenses/MIT"]]]
+                           [:developers
+                            [:developer
+                             [:name "Jonas Rodrigues"]]]]})
+  ;; Post-process POM to add "provided" scope to Clojure dependency
+  (let [pom-file (b/pom-path {:lib lib :class-dir class-dir})
+        pom-content (slurp pom-file)
+        ;; Add <scope>provided</scope> after the Clojure dependency version
+        updated-pom (str/replace pom-content
+                      #"(<groupId>org\.clojure</groupId>\s*<artifactId>clojure</artifactId>\s*<version>[^<]+</version>)"
+                      "$1\n      <scope>provided</scope>")]
+    (spit pom-file updated-pom)))
 
 (defn jar
   "Build library jar file."
