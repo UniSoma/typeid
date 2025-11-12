@@ -3,9 +3,14 @@
   [{:id :unit-cljs
     :type :kaocha.type/cljs
     :test-paths ["test"]
+    :source-paths ["src"]
     :cljs/timeout 10000
     :cljs/repl-env cljs.repl.node/repl-env}]
 
-  :plugins [:kaocha.plugin/profiling]
+  
   :color? true
-  :fail-fast? false}
+  :fail-fast? false
+  :randomize? true
+  :reporter kaocha.report.progress/report
+  :plugins [:kaocha.plugin/profiling :kaocha.plugin/capture-output]}
+
