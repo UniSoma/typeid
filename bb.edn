@@ -6,20 +6,20 @@
   ;; ============================================================================
 
   test
-  {:doc "Run all JVM tests"
-   :task (shell "clojure -M:test -m kaocha.runner")}
+  {:doc "Run all JVM tests (supports args: --focus, --skip-meta, etc.)"
+   :task (apply shell "clojure" "-M:test" "-m" "kaocha.runner" *command-line-args*)}
 
   test:watch
-  {:doc "Run tests in watch mode"
-   :task (shell "clojure -M:test -m kaocha.runner --watch")}
+  {:doc "Run tests in watch mode (supports additional Kaocha args)"
+   :task (apply shell "clojure" "-M:test" "-m" "kaocha.runner" "--watch" *command-line-args*)}
 
   test:cljs
-  {:doc "Run ClojureScript tests (requires Node.js)"
-   :task (shell "clojure -M:test:cljs -m kaocha.runner --config-file tests.cljs.edn")}
+  {:doc "Run ClojureScript tests (requires Node.js, supports additional args)"
+   :task (apply shell "clojure" "-M:test:cljs" "-m" "kaocha.runner" "--config-file" "tests.cljs.edn" *command-line-args*)}
 
   test:coverage
-  {:doc "Run tests with coverage report (requires 80% minimum)"
-   :task (shell "clojure -M:test:coverage")}
+  {:doc "Run tests with coverage report (requires 80% minimum, supports args)"
+   :task (apply shell "clojure" "-M:test:coverage" *command-line-args*)}
 
   test:all
   {:doc "Run all tests (JVM + ClojureScript)"
@@ -30,16 +30,16 @@
   ;; ============================================================================
 
   lint
-  {:doc "Run clj-kondo linting"
-   :task (shell "clojure -M:lint")}
+  {:doc "Run clj-kondo linting (supports args: --config, --parallel, etc.)"
+   :task (apply shell "clojure" "-M:lint" *command-line-args*)}
 
   format
-  {:doc "Format code with cljfmt"
-   :task (shell "clojure -M:dev -m cljfmt.main fix src test dev")}
+  {:doc "Format code with cljfmt (supports additional paths or args)"
+   :task (apply shell "clojure" "-M:dev" "-m" "cljfmt.main" "fix" "src" "test" "dev" *command-line-args*)}
 
   format:check
-  {:doc "Check code formatting without fixing"
-   :task (shell "clojure -M:dev -m cljfmt.main check src test dev")}
+  {:doc "Check code formatting without fixing (supports additional paths or args)"
+   :task (apply shell "clojure" "-M:dev" "-m" "cljfmt.main" "check" "src" "test" "dev" *command-line-args*)}
 
   quality
   {:doc "Run all quality checks (lint + format check)"
@@ -50,8 +50,8 @@
   ;; ============================================================================
 
   bench
-  {:doc "Run performance benchmarks"
-   :task (shell "clojure -M:dev -m benchmarks.core-bench")}
+  {:doc "Run performance benchmarks (supports additional args)"
+   :task (apply shell "clojure" "-M:dev" "-m" "benchmarks.core-bench" *command-line-args*)}
 
   ;; ============================================================================
   ;; Documentation
@@ -110,13 +110,13 @@
   ;; ============================================================================
 
   repl
-  {:doc "Start nREPL server with dev utilities"
+  {:doc "Start nREPL server with dev utilities (supports args: --port, --bind, etc.)"
    :override-builtin true
-   :task (shell "clojure -M:dev:test:nrepl")}
+   :task (apply shell "clojure" "-M:dev:test:nrepl" *command-line-args*)}
 
   repl:headless
-  {:doc "Start headless nREPL server"
-   :task (shell "clojure -M:nrepl")}
+  {:doc "Start headless nREPL server (supports args: --port, --bind, etc.)"
+   :task (apply shell "clojure" "-M:nrepl" *command-line-args*)}
 
   ;; ============================================================================
   ;; CI/CD Workflows
@@ -183,24 +183,24 @@
   ;; ============================================================================
 
   tree
-  {:doc "Show project file structure"
-   :task (shell "tree -I 'target|node_modules|.git|.cpcache|.clj-kondo/.cache|docs' -L 3")}
+  {:doc "Show project file structure (supports additional tree args)"
+   :task (apply shell "tree" "-I" "?|target|node_modules|.git|.cpcache|.clj-kondo/.cache|docs" "-L" "3" *command-line-args*)}
 
   outdated
   {:doc "Check for outdated dependencies (supports args: --upgrade, etc.)"
    :task (apply shell "clojure" "-M:outdated" *command-line-args*)}
 
   classpath
-  {:doc "Show the classpath"
-   :task (shell "clojure -Spath")}
+  {:doc "Show the classpath (supports additional Clojure args)"
+   :task (apply shell "clojure" "-Spath" *command-line-args*)}
 
   ;; ============================================================================
   ;; Quick Commands
   ;; ============================================================================
 
   quick:test
-  {:doc "Quick test run (skip long-running tests)"
-   :task (shell "clojure -M:test -m kaocha.runner --skip-meta :slow")}
+  {:doc "Quick test run (skip long-running tests, supports additional args)"
+   :task (apply shell "clojure" "-M:test" "-m" "kaocha.runner" "--skip-meta" ":slow" *command-line-args*)}
 
   quick:check
   {:doc "Quick quality check (lint only, no tests)"
@@ -216,7 +216,7 @@
            (println "╔══════════════════════════════════════════════════════════════╗")
            (println "║                                                              ║")
            (println "║  TypeID for Clojure                                          ║")
-           (println "║  Type-safe, K-sortable unique identifiers                   ║")
+           (println "║  Type-safe, K-sortable unique identifiers                    ║")
            (println "║                                                              ║")
            (println "╚══════════════════════════════════════════════════════════════╝")
            (println)
@@ -243,16 +243,16 @@
   ;; ============================================================================
 
   git:status
-  {:doc "Show git status with helpful context"
-   :task (shell "git status")}
+  {:doc "Show git status with helpful context (supports git status args)"
+   :task (apply shell "git" "status" *command-line-args*)}
 
   git:diff
-  {:doc "Show uncommitted changes"
-   :task (shell "git diff")}
+  {:doc "Show uncommitted changes (supports git diff args: --cached, file paths, etc.)"
+   :task (apply shell "git" "diff" *command-line-args*)}
 
   git:branches
-  {:doc "Show all branches"
-   :task (shell "git branch -a")}
+  {:doc "Show all branches (supports additional git branch args)"
+   :task (apply shell "git" "branch" "-a" *command-line-args*)}
 
   ;; ============================================================================
   ;; Setup
