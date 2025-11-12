@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [21, 25]
+        java: [17, 25]
         clojure: [1.11.1, 1.12.3]
     steps:
       - uses: actions/checkout@v5
@@ -32,10 +32,8 @@ jobs:
       - name: Build jar
         run: clojure -T:build jar
       - name: Run coverage (Java 21, Clojure 1.12.3 only)
-        if: matrix.java == 21 && matrix.clojure == '1.12.3'
         run: clojure -M:coverage
       - name: Upload coverage to Codecov
-        if: matrix.java == 21 && matrix.clojure == '1.12.3'
         uses: codecov/codecov-action@v5
         with:
           files: ./target/coverage/codecov.json
