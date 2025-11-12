@@ -86,23 +86,24 @@
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] Unit test for parse with valid prefixed TypeID in test/typeid/core_test.clj
-- [ ] T023 [P] [US2] Unit test for parse with valid prefix-less TypeID in test/typeid/core_test.clj
-- [ ] T024 [P] [US2] Unit test for parse exception throwing on invalid TypeID in test/typeid/core_test.clj
-- [ ] T025 [P] [US2] Unit test for parse exception structure and ex-data in test/typeid/core_test.clj
-- [ ] T026 [P] [US2] Property-based test for parse round-trip consistency in test/typeid/core_test.clj
+- [X] T022 [P] [US2] Unit test for parse with valid prefixed TypeID in test/typeid/core_test.clj
+- [X] T023 [P] [US2] Unit test for parse with valid prefix-less TypeID in test/typeid/core_test.clj
+- [X] T024 [P] [US2] Unit test for parse exception throwing on invalid TypeID in test/typeid/core_test.clj
+- [X] T025 [P] [US2] Unit test for parse exception structure and ex-data in test/typeid/core_test.clj
+- [X] T026 [P] [US2] Property-based test for parse round-trip consistency in test/typeid/core_test.clj
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Implement parse function in src/typeid/core.clj that returns components map for valid TypeIDs
-- [ ] T028 [US2] Implement exception throwing with structured ex-info data for invalid TypeIDs in parse function in src/typeid/core.clj
-- [ ] T029 [US2] Implement prefix extraction and handling (including empty prefix) in parse function in src/typeid/core.clj
-- [ ] T030 [US2] Implement suffix extraction and UUID decoding in parse function in src/typeid/core.clj
-- [ ] T031 [US2] Ensure parse constructs complete components map with all required fields in src/typeid/core.clj
-- [ ] T032 [US2] Add comprehensive docstring with examples and exception documentation to parse function in src/typeid/core.clj
-- [ ] T033 [US2] Remove old typeid->map function from src/typeid/core.clj
+- [X] T027 [US2] Implement parse function in src/typeid/core.clj that returns components map for valid TypeIDs
+- [X] T028 [US2] Implement exception throwing with structured ex-info data for invalid TypeIDs in parse function in src/typeid/core.clj
+- [X] T029 [US2] Implement prefix extraction and handling (including empty prefix) in parse function in src/typeid/core.clj
+- [X] T030 [US2] Implement suffix extraction and UUID decoding in parse function in src/typeid/core.clj
+- [X] T031 [US2] Ensure parse constructs complete components map with all required fields in src/typeid/core.clj
+- [X] T032 [US2] Add comprehensive docstring with examples and exception documentation to parse function in src/typeid/core.clj
+- [X] T033 [US2] Remove old typeid->map function from src/typeid/core.clj (N/A - function never existed)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+**Status**: ✅ COMPLETE - All tests passing (47 tests, 715 assertions)
 
 ---
 

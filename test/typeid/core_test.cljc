@@ -1,6 +1,9 @@
 (ns typeid.core-test
   (:require [clojure.string :as str]
     [clojure.test :refer [deftest is testing]]
+    [clojure.test.check.clojure-test :refer [defspec]]
+    [clojure.test.check.generators :as gen]
+    [clojure.test.check.properties :as prop]
     [typeid.codec :as codec]
     [typeid.core :as t]
     [typeid.validation :as v]))
@@ -519,3 +522,42 @@
     (let [typeid "01h5fskfsk4fpeqwnsyz5hj55t"
           parsed (t/parse typeid)]
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed))))))
+
+;; T026: Property-based test for parse round-trip consistency
+(def gen-valid-prefix
+  "Generator for valid TypeID prefixes matching the pattern [a-z]([a-z_]{0,61}[a-z])?"
+  (gen/one-of
+   [(gen/return "") ; Empty prefix
+    ;; Single letter prefix (a-z)
+    (gen/fmap str (gen/elements (map char (range (int \a) (inc (int \z))))))
+    ;; Multi-character prefix: starts with a-z, middle can be a-z or _, ends with a-z
+    (gen/fmap (fn [[first-char middle-chars last-char]]
+                (str first-char (apply str middle-chars) last-char))
+              (gen/tuple
+               (gen/elements (map char (range (int \a) (inc (int \z))))) ; First: a-z
+               (gen/vector (gen/elements (concat (map char (range (int \a) (inc (int \z)))) [\_ ])) 0 61) ; Middle: a-z or _
+               (gen/elements (map char (range (int \a) (inc (int \z)))))))]))
+
+(defspec parse-round-trip-property
+  {:num-tests 100
+   :seed 12345} ; Deterministic seed for reproducibility
+  (prop/for-all [prefix gen-valid-prefix]
+    ;; Generate a TypeID with the given prefix
+    (let [typeid (t/generate prefix)
+          ;; Parse it back
+          parsed (t/parse typeid)
+          ;; Extract components
+          parsed-prefix (:prefix parsed)
+          parsed-typeid (:typeid parsed)]
+      ;; Verify round-trip consistency
+      (and
+       ;; The parsed prefix should match the original (accounting for empty string vs "")
+       (= (if (empty? prefix) "" prefix) parsed-prefix)
+       ;; The parsed typeid should match the original
+       (= typeid parsed-typeid)
+       ;; The suffix should be exactly 26 characters
+       (= 26 (count (:suffix parsed)))
+       ;; The UUID should be valid (16 bytes)
+       (v/valid-uuid-bytes? (:uuid parsed))
+       ;; Re-generating from the same UUID should produce the same TypeID
+       (= typeid (codec/encode (:uuid parsed) parsed-prefix))))))
