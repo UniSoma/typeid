@@ -282,13 +282,37 @@ Extract components from a TypeID:
 
 ## Performance
 
-**Benchmarks** (measured with Criterium on JDK 17):
-- `generate`: < 2μs per operation
-- `parse`: < 2μs per operation
-- `encode/decode`: < 1μs per operation
-- `validate-prefix`: < 500ns per operation
+The library is designed for high performance with the following **target benchmarks**:
 
-Zero reflection warnings. All hot paths use type hints.
+| Operation | Target |
+|-----------|--------|
+| `create` | < 2μs |
+| `parse` | < 2μs |
+| `encode/decode` | < 1μs |
+| `base32/encode` | < 1μs |
+| `base32/decode` | < 1μs |
+| `validate-prefix` | < 500ns |
+| `uuid/generate-uuidv7` | < 500ns |
+
+Zero reflection warnings. All hot paths use type hints for optimal performance.
+
+### Running Benchmarks
+
+To measure actual performance on your system:
+
+```bash
+# Using Babashka (recommended)
+bb bench
+
+# Or manually with Clojure CLI
+clojure -M:dev -m benchmarks.core-bench
+```
+
+The benchmark suite uses [Criterium](https://github.com/hugoduncan/criterium) and reports:
+- **Time**: Mean execution time per operation
+- **Throughput**: Operations per second
+- **Variability**: Standard deviation as percentage of mean
+- **Pass/Fail**: Indicator showing whether target is met
 
 ## Comparison with Alternatives
 

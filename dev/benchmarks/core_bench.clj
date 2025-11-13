@@ -27,23 +27,56 @@
 ;; ============================================================================
 
 (defn format-time
-  "Format nanoseconds to human-readable time with target comparison."
-  [mean-ns target-ns]
-  (let [mean-us (/ mean-ns 1000.0)
-        target-us (/ target-ns 1000.0)
-        status (if (<= mean-ns target-ns) "✓ PASS" "✗ FAIL")]
-    (format "%s %.2fμs (target: %.2fμs)" status mean-us target-us)))
+  "Format nanoseconds to human-readable time with appropriate unit."
+  [time-ns]
+  (cond
+    (< time-ns 1) (format "%.3fns" (double time-ns))     ; Sub-nanosecond with 3 decimals
+    (< time-ns 10) (format "%.2fns" (double time-ns))    ; Single digit ns with 2 decimals
+    (< time-ns 1000) (format "%.1fns" (double time-ns))  ; Sub-microsecond with 1 decimal
+    (< time-ns 1000000) (format "%.2fμs" (/ time-ns 1000.0))
+    (< time-ns 1000000000) (format "%.2fms" (/ time-ns 1000000.0))
+    :else (format "%.2fs" (/ time-ns 1000000000.0))))
+
+(defn format-ops-per-sec
+  "Format operations per second in human-readable form."
+  [ops-per-sec]
+  (cond
+    (>= ops-per-sec 1000000000) (format "%.2fG ops/s" (/ ops-per-sec 1000000000.0))
+    (>= ops-per-sec 1000000) (format "%.2fM ops/s" (/ ops-per-sec 1000000.0))
+    (>= ops-per-sec 1000) (format "%.2fK ops/s" (/ ops-per-sec 1000.0))
+    :else (format "%.0f ops/s" (double ops-per-sec))))
 
 (defn print-result
-  "Print benchmark result with target comparison."
+  "Print benchmark result with target comparison and detailed metrics."
   [label result target-ns]
-  (let [mean-ns (first (:mean result))]
-    (println (format "%-30s %s" label (format-time mean-ns target-ns)))))
+  (let [mean-sec (first (:mean result))         ; Criterium returns mean in seconds
+        variance-sec2 (first (:variance result)) ; Variance in seconds²
+        mean-ns (* mean-sec 1e9)                 ; Convert to nanoseconds
+        std-dev-ns (* (Math/sqrt variance-sec2) 1e9) ; Convert std dev to ns
+        ops-per-sec (/ 1 mean-sec)               ; Operations per second
+        status (if (<= mean-ns target-ns) "✓" "✗")]
+    (println (format "%-30s %s %8s  %14s  ±%.1f%%"
+               label
+               status
+               (format-time mean-ns)
+               (format-ops-per-sec ops-per-sec)
+               (* 100 (/ std-dev-ns mean-ns))))))
+
+(defn print-benchmark-header
+  "Print column headers for benchmark results."
+  []
+  (println)
+  (println (format "%-30s %s %8s  %14s  %s"
+             "Operation"
+             " "
+             "Time"
+             "Throughput"
+             "Variability"))
+  (println (apply str (repeat 75 "-"))))
 
 (defn run-benchmark
   "Run a benchmark with criterium and print results."
   [label f target-ns]
-  (println (format "\nBenchmarking: %s" label))
   (let [result (crit/quick-benchmark* f nil)]
     (print-result label result target-ns)
     result))
@@ -58,8 +91,7 @@
 
 (def sample-typeid
   "Sample TypeID string for testing."
-  (let [{:keys [ok]} (typeid/create "user")]
-    ok))
+  (typeid/create "user"))
 
 (def sample-suffix
   "Sample base32 suffix for testing."
@@ -190,10 +222,10 @@
   (println)
   (println "Running benchmarks with criterium...")
   (println "This may take several minutes.")
-  (println)
 
   ;; Core API benchmarks
   (println "\n=== Core API Functions ===")
+  (print-benchmark-header)
   (bench-generate)
   (bench-generate-no-prefix)
   (bench-parse)
@@ -201,13 +233,15 @@
   (bench-decode)
 
   ;; Low-level component benchmarks
-  (println "\n=== Low-Level Components ===")
+  (println "\n\n=== Low-Level Components ===")
+  (print-benchmark-header)
   (bench-base32-encode)
   (bench-base32-decode)
   (bench-uuidv7-generation)
 
   ;; Validation benchmarks
-  (println "\n=== Validation Functions ===")
+  (println "\n\n=== Validation Functions ===")
+  (print-benchmark-header)
   (bench-prefix-validation)
   (bench-prefix-validation-invalid)
   (bench-typeid-string-validation)
@@ -217,10 +251,11 @@
   (println "Benchmarks Complete!")
   (println "========================================")
   (println)
-  (println "Summary:")
-  (println "- All times shown are mean execution time")
-  (println "- ✓ PASS = meets performance target")
-  (println "- ✗ FAIL = exceeds performance target")
+  (println "Column descriptions:")
+  (println "  ✓/✗         - Pass/Fail indicator (vs. target)")
+  (println "  Time        - Mean execution time per operation")
+  (println "  Throughput  - Operations per second")
+  (println "  Variability - Standard deviation as % of mean")
   (println)
   (println "Note: Run with reflection warning check:")
   (println "  clojure -M:dev -e \"(set! *warn-on-reflection* true) (require 'benchmarks.core-bench)\"")
