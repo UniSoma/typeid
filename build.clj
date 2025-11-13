@@ -4,7 +4,7 @@
     [clojure.tools.build.api :as b]))
 
 (def lib 'io.github.unisoma/typeid)
-(def version (or (System/getenv "RELEASE_VERSION") "0.1.0-SNAPSHOT"))
+(def version (or (System/getenv "RELEASE_VERSION") "0.3.0-SNAPSHOT"))
 (def class-dir "target/classes")
 (def basis (delay (b/create-basis {:project "deps.edn"})))
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
