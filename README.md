@@ -294,6 +294,29 @@ The library is designed for high performance with the following **target benchma
 | `validate-prefix` | < 500ns |
 | `uuid/generate-uuidv7` | < 500ns |
 
+### Why These Targets?
+
+These performance targets ensure TypeID operations remain negligible overhead in production systems:
+
+**Real-world throughput:**
+- **500K TypeIDs/second** at 2μs per create operation (single core)
+- **1M operations/second** at 1μs for encode/decode
+- Even at 10K requests/second (high traffic), ID generation consumes **<2% CPU time**
+
+**Compared to typical operations:**
+- Database queries: **1,000-10,000μs** (1-10ms) — **500-5000x slower**
+- Network round trips: **10,000-100,000μs** (10-100ms) — **5,000-50,000x slower**
+- File I/O: **1,000-100,000μs** — **500-50,000x slower**
+- TypeID generation: **2μs** — **essentially free**
+
+**When performance matters:**
+- **Hot paths**: TypeIDs are often created for every new entity (users, orders, events)
+- **Batch operations**: Generating thousands of IDs during data imports or migrations
+- **High-frequency events**: Logging, analytics, or event sourcing systems
+- **Latency-sensitive APIs**: Every microsecond counts in sub-millisecond response targets
+
+**Bottom line:** At these speeds, TypeID operations are **negligible compared to I/O costs** (database, network, disk). You can generate IDs freely without worrying about performance bottlenecks.
+
 Zero reflection warnings. All hot paths use type hints for optimal performance.
 
 ### Running Benchmarks

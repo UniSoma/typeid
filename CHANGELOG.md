@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation**: Added performance rationale section to README explaining why benchmark targets are appropriate
+  - Real-world throughput implications (500K-1M ops/second)
+  - Comparison to typical I/O operations (database, network, file)
+  - Use case scenarios where performance matters
+  - Clarifies that TypeID operations are negligible overhead in production systems
+
 ## [0.1.1] - 2025-11-12
 
 ### Changed
