@@ -1,6 +1,6 @@
 (ns typeid.impl.uuid-test
   (:require [clojure.test :refer [deftest is testing]]
-    [typeid.impl.uuid :as uuid]
+    [typeid.uuid :as uuid]
     [typeid.validation :as v]))
 
 #?(:clj (set! *warn-on-reflection* true))

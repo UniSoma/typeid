@@ -17,7 +17,7 @@
     [typeid.codec :as codec]
     [typeid.core :as typeid]
     [typeid.impl.base32 :as base32]
-    [typeid.impl.uuid :as uuid]
+    [typeid.uuid :as uuid]
     [typeid.validation :as v]))
 
 (set! *warn-on-reflection* true)

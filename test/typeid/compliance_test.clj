@@ -10,7 +10,7 @@
     [clojure.test :refer [deftest is testing]]
     [typeid.codec :as codec]
     [typeid.core :as t]
-    [typeid.impl.uuid :as uuid]))
+    [typeid.uuid :as uuid]))
 
 (set! *warn-on-reflection* true)
 

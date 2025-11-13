@@ -25,9 +25,9 @@ Single library project structure:
 
 **Purpose**: Verify current state and prepare for namespace migration
 
-- [ ] T001 Verify existing implementation in src/typeid/impl/uuid.cljc has all three functions
-- [ ] T002 [P] Find all internal references to typeid.impl.uuid in src/ directory
-- [ ] T003 [P] Find all test references to typeid.impl.uuid in test/ directory
+- [x] T001 Verify existing implementation in src/typeid/impl/uuid.cljc has all three functions
+- [x] T002 [P] Find all internal references to typeid.impl.uuid in src/ directory
+- [x] T003 [P] Find all test references to typeid.impl.uuid in test/ directory
 
 ---
 
@@ -37,10 +37,10 @@ Single library project structure:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create new public namespace file at src/typeid/uuid.cljc
-- [ ] T005 Copy implementation from src/typeid/impl/uuid.cljc to src/typeid/uuid.cljc
-- [ ] T006 Remove ^:no-doc metadata from namespace declaration in src/typeid/uuid.cljc
-- [ ] T007 Add comprehensive namespace docstring with examples to src/typeid/uuid.cljc
+- [x] T004 Create new public namespace file at src/typeid/uuid.cljc
+- [x] T005 Copy implementation from src/typeid/impl/uuid.cljc to src/typeid/uuid.cljc
+- [x] T006 Remove ^:no-doc metadata from namespace declaration in src/typeid/uuid.cljc
+- [ ] T007 Add comprehensive namespace docstring with examples to src/typeid/uuid.cljc (PARTIAL: has basic docstring, needs examples)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -56,7 +56,7 @@ Single library project structure:
 
 - [ ] T008 [US1] Ensure uuid->bytes function in src/typeid/uuid.cljc has comprehensive docstring with JVM and ClojureScript examples
 - [ ] T009 [US1] Verify uuid->bytes validates UUID input and throws ex-info for invalid types
-- [ ] T010 [US1] Update test/typeid/uuid_test.cljc to import from typeid.uuid instead of typeid.impl.uuid
+- [x] T010 [US1] Update test/typeid/uuid_test.cljc to import from typeid.uuid instead of typeid.impl.uuid
 - [ ] T011 [US1] Run JVM tests for uuid->bytes to verify functionality unchanged
 - [ ] T012 [US1] Run ClojureScript tests for uuid->bytes to verify functionality unchanged
 
@@ -105,9 +105,9 @@ Single library project structure:
 
 **Purpose**: Update all internal code that references the old impl namespace
 
-- [ ] T024 [P] Update typeid.core namespace in src/typeid/core.cljc to require typeid.uuid instead of typeid.impl.uuid
-- [ ] T025 [P] Update typeid.codec namespace in src/typeid/codec.cljc to require typeid.uuid instead of typeid.impl.uuid
-- [ ] T026 [P] Search for any other internal references to typeid.impl.uuid and update them
+- [x] T024 [P] Update typeid.core namespace in src/typeid/core.cljc to require typeid.uuid instead of typeid.impl.uuid
+- [x] T025 [P] Update typeid.codec namespace in src/typeid/codec.cljc to require typeid.uuid instead of typeid.impl.uuid (N/A: codec doesn't import uuid)
+- [x] T026 [P] Search for any other internal references to typeid.impl.uuid and update them (Updated: dev/benchmarks/core_bench.clj, dev/user.clj, test/typeid/compliance_test.clj)
 - [ ] T027 Run full test suite (JVM and ClojureScript) to verify all internal references work correctly
 
 **Checkpoint**: All internal code uses new public namespace
@@ -118,7 +118,7 @@ Single library project structure:
 
 **Purpose**: Complete the migration by removing the old impl namespace
 
-- [ ] T028 Delete old namespace file at src/typeid/impl/uuid.cljc
+- [x] T028 Delete old namespace file at src/typeid/impl/uuid.cljc
 - [ ] T029 Run full test suite (JVM) to verify no regressions after deletion
 - [ ] T030 Run full test suite (ClojureScript) to verify no regressions after deletion
 - [ ] T031 Run clj-kondo to ensure zero warnings or errors

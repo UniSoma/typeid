@@ -29,7 +29,7 @@
    - [[explain]] - Validate TypeID and get error details (no exceptions)"
   (:require [clojure.string :as str]
     [typeid.codec :as codec]
-    [typeid.impl.uuid :as uuid]
+    [typeid.uuid :as uuid]
     [typeid.validation :as v]))
 
 #?(:clj (set! *warn-on-reflection* true))

@@ -13,7 +13,7 @@
     [clojure.string :as str]
     [clojure.tools.namespace.repl :refer [refresh]]
     [typeid.core :as typeid]
-    [typeid.impl.uuid :as uuid]))
+    [typeid.uuid :as uuid]))
 
 ;; ============================================================================
 ;; REPL Utilities
