@@ -205,7 +205,7 @@
            (println "╚══════════════════════════════════════════════════════════════╝")
            (println)
            (println "Artifact:     io.github.unisoma/typeid")
-           (println "Version:      0.1.1")
+           (println "Version:      0.2.0")
            (println "Repository:   https://github.com/UniSoma/typeid")
            (println "Clojars:      https://clojars.org/io.github.unisoma/typeid")
            (println "API Docs:     https://cljdoc.org/d/io.github.unisoma/typeid")
