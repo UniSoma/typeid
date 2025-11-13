@@ -6,6 +6,11 @@
 [![CI](https://github.com/UniSoma/typeid/workflows/CI/badge.svg)](https://github.com/UniSoma/typeid/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+> **⚠️ Early Stage Development**
+> This library is in active development (version 0.x). The API may change before reaching 1.0.0.
+> While the library is production-ready and fully tested, you may encounter breaking changes in minor releases.
+> See [CHANGELOG.md](CHANGELOG.md) for detailed change tracking.
+
 ## What is TypeID?
 
 TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type prefix to UUIDs, making them more readable and self-documenting.
@@ -274,23 +279,6 @@ Extract components from a TypeID:
 ;;=> Type: user
 ;;=> UUID: 018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a
 ```
-
-## Migration Guide
-
-If you're upgrading from an earlier version that used the data-as-error pattern (`{:ok ...}` / `{:error ...}`), here's how to migrate to the new exception-based API:
-
-### API Changes Summary
-
-| Old Function | New Function | Change |
-|--------------|--------------|--------|
-| `validate` | `explain` | Now returns `nil` for valid, error map for invalid (no wrapping) |
-| `typeid->map` | `parse` | Now throws exception on invalid input (no `{:ok ...}` wrapping) |
-| `generate` | `create` | Renamed to `create` with enhanced functionality (2-arity support) |
-| N/A | `create` (2-arity) | **NEW**: Create TypeID from existing UUID |
-| `encode` | `codec/encode` | Moved to `typeid.codec` namespace |
-| `decode` | `codec/decode` | Moved to `typeid.codec` namespace |
-| `uuid->hex` | `codec/uuid->hex` | Moved to `typeid.codec` namespace |
-| `hex->uuid` | `codec/hex->uuid` | Moved to `typeid.codec` namespace |
 
 ## Performance
 
