@@ -57,7 +57,7 @@ Developers expect that functions accepting UUIDs and functions returning UUIDs u
 
 ### Edge Cases
 
-- What happens when a TypeID with an edge case UUID (all zeros, all ones, maximum timestamp) is parsed? The UUID object should be returned correctly.
+- What happens when a TypeID with an edge case UUID (zero UUID, max UUID with all 0xFF bytes, maximum timestamp) is parsed? The UUID object should be returned correctly.
 - How does the system handle parsing TypeIDs created from non-v7 UUIDs (v1, v4, random)? The parsed UUID should match the original UUID regardless of version.
 - What happens when the same TypeID is parsed multiple times? Each parse operation should return an equivalent UUID (comparing equal but potentially different object instances).
 - How does the system handle backward compatibility? This will be a breaking change with a minor version bump (e.g., 0.1.x → 0.2.0) since the library is in experimental stage.
@@ -68,7 +68,7 @@ Developers expect that functions accepting UUIDs and functions returning UUIDs u
 
 - **FR-001**: When parsing TypeIDs, the system MUST return platform-native UUID objects (not byte arrays)
 - **FR-002**: UUID objects returned from parsing MUST be equivalent to UUIDs used for creation (enabling round-trip conversions)
-- **FR-003**: Parsing MUST support all UUID versions (v1, v4, v7, etc.) and edge cases (all zeros, all ones, maximum values)
+- **FR-003**: Parsing MUST support all UUID versions (v1, v4, v7, etc.) and edge cases (zero UUID, max UUID with all 0xFF bytes, maximum timestamp values)
 - **FR-004**: The system MUST provide utilities to convert between byte arrays and platform UUID objects
 - **FR-005**: User documentation MUST show UUID objects (not byte arrays) in all parsing examples
 - **FR-006**: API reference documentation MUST accurately reflect UUID object return types

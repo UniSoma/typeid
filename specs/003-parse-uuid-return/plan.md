@@ -18,7 +18,7 @@ Change the `parse` function to return platform-native UUID objects (java.util.UU
 **Target Platform**: JVM (Clojure 1.11/1.12 on JDK 17/21), JavaScript (ClojureScript via Node.js/browsers)
 **Project Type**: Single library project (src/ and test/ structure)
 **Performance Goals**:
-- `parse` function: < 2μs per operation
+- `parse` function: < 3μs per operation (expected ~2.5μs after UUID conversion)
 - `bytes->uuid` utility: < 500ns per conversion
 - No performance regression from current implementation
 **Constraints**:
@@ -192,7 +192,7 @@ dev/
     └── core_bench.clj      # MODIFY: add bytes->uuid benchmark
 ```
 
-**Structure Decision**: Single library project using standard Clojure src/ and test/ layout. Implementation changes are isolated to:
+**Structure Decision**: Single library project using standard Clojure src/ and test/ layout (test paths mirror src paths: src/typeid/core.cljc → test/typeid/core_test.cljc). Implementation changes are isolated to:
 1. `typeid.impl.uuid` namespace (new `bytes->uuid` function)
 2. `typeid.core` namespace (update `parse` function)
 3. Test files (update expectations from byte arrays to UUIDs)
