@@ -40,7 +40,7 @@ Single library project structure:
 - [x] T004 Create new public namespace file at src/typeid/uuid.cljc
 - [x] T005 Copy implementation from src/typeid/impl/uuid.cljc to src/typeid/uuid.cljc
 - [x] T006 Remove ^:no-doc metadata from namespace declaration in src/typeid/uuid.cljc
-- [ ] T007 Add comprehensive namespace docstring with examples to src/typeid/uuid.cljc (PARTIAL: has basic docstring, needs examples)
+- [x] T007 Add comprehensive namespace docstring with examples to src/typeid/uuid.cljc
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -54,11 +54,11 @@ Single library project structure:
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Ensure uuid->bytes function in src/typeid/uuid.cljc has comprehensive docstring with JVM and ClojureScript examples
-- [ ] T009 [US1] Verify uuid->bytes validates UUID input and throws ex-info for invalid types
+- [x] T008 [US1] Ensure uuid->bytes function in src/typeid/uuid.cljc has comprehensive docstring with JVM and ClojureScript examples
+- [x] T009 [US1] Verify uuid->bytes validates UUID input and throws ex-info for invalid types
 - [x] T010 [US1] Update test/typeid/uuid_test.cljc to import from typeid.uuid instead of typeid.impl.uuid
-- [ ] T011 [US1] Run JVM tests for uuid->bytes to verify functionality unchanged
-- [ ] T012 [US1] Run ClojureScript tests for uuid->bytes to verify functionality unchanged
+- [x] T011 [US1] Run JVM tests for uuid->bytes to verify functionality unchanged
+- [x] T012 [US1] Run ClojureScript tests for uuid->bytes to verify functionality unchanged
 
 **Checkpoint**: uuid->bytes is publicly accessible and fully tested
 
@@ -72,12 +72,12 @@ Single library project structure:
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Ensure bytes->uuid function in src/typeid/uuid.cljc has comprehensive docstring with JVM and ClojureScript examples
-- [ ] T014 [US2] Verify bytes->uuid validates byte array length (must be exactly 16 bytes)
-- [ ] T015 [US2] Verify bytes->uuid throws ex-info for invalid input (wrong size, wrong type)
-- [ ] T016 [US2] Add test case verifying round-trip property: uuid == bytes->uuid(uuid->bytes(uuid))
-- [ ] T017 [US2] Run JVM tests for bytes->uuid to verify functionality unchanged
-- [ ] T018 [US2] Run ClojureScript tests for bytes->uuid to verify functionality unchanged
+- [x] T013 [US2] Ensure bytes->uuid function in src/typeid/uuid.cljc has comprehensive docstring with JVM and ClojureScript examples
+- [x] T014 [US2] Verify bytes->uuid validates byte array length (must be exactly 16 bytes)
+- [x] T015 [US2] Verify bytes->uuid throws ex-info for invalid input (wrong size, wrong type)
+- [x] T016 [US2] Add test case verifying round-trip property: uuid == bytes->uuid(uuid->bytes(uuid))
+- [x] T017 [US2] Run JVM tests for bytes->uuid to verify functionality unchanged
+- [x] T018 [US2] Run ClojureScript tests for bytes->uuid to verify functionality unchanged
 
 **Checkpoint**: bytes->uuid is publicly accessible, round-trip operations verified
 
@@ -91,11 +91,11 @@ Single library project structure:
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Ensure generate-uuidv7 function in src/typeid/uuid.cljc has comprehensive docstring explaining UUIDv7 structure
-- [ ] T020 [US3] Verify generate-uuidv7 produces UUIDs with version bits = 7 (0111) in byte 6
-- [ ] T021 [US3] Verify generate-uuidv7 produces chronologically sortable UUIDs
-- [ ] T022 [US3] Run JVM tests for generate-uuidv7 to verify functionality unchanged
-- [ ] T023 [US3] Run ClojureScript tests for generate-uuidv7 to verify functionality unchanged
+- [x] T019 [US3] Ensure generate-uuidv7 function in src/typeid/uuid.cljc has comprehensive docstring explaining UUIDv7 structure
+- [x] T020 [US3] Verify generate-uuidv7 produces UUIDs with version bits = 7 (0111) in byte 6
+- [x] T021 [US3] Verify generate-uuidv7 produces chronologically sortable UUIDs
+- [x] T022 [US3] Run JVM tests for generate-uuidv7 to verify functionality unchanged
+- [x] T023 [US3] Run ClojureScript tests for generate-uuidv7 to verify functionality unchanged
 
 **Checkpoint**: All three UUID utility functions are publicly accessible and tested
 
@@ -108,7 +108,7 @@ Single library project structure:
 - [x] T024 [P] Update typeid.core namespace in src/typeid/core.cljc to require typeid.uuid instead of typeid.impl.uuid
 - [x] T025 [P] Update typeid.codec namespace in src/typeid/codec.cljc to require typeid.uuid instead of typeid.impl.uuid (N/A: codec doesn't import uuid)
 - [x] T026 [P] Search for any other internal references to typeid.impl.uuid and update them (Updated: dev/benchmarks/core_bench.clj, dev/user.clj, test/typeid/compliance_test.clj)
-- [ ] T027 Run full test suite (JVM and ClojureScript) to verify all internal references work correctly
+- [x] T027 Run full test suite (JVM and ClojureScript) to verify all internal references work correctly
 
 **Checkpoint**: All internal code uses new public namespace
 
@@ -119,9 +119,9 @@ Single library project structure:
 **Purpose**: Complete the migration by removing the old impl namespace
 
 - [x] T028 Delete old namespace file at src/typeid/impl/uuid.cljc
-- [ ] T029 Run full test suite (JVM) to verify no regressions after deletion
-- [ ] T030 Run full test suite (ClojureScript) to verify no regressions after deletion
-- [ ] T031 Run clj-kondo to ensure zero warnings or errors
+- [x] T029 Run full test suite (JVM) to verify no regressions after deletion
+- [x] T030 Run full test suite (ClojureScript) to verify no regressions after deletion
+- [x] T031 Run clj-kondo to ensure zero warnings or errors
 
 **Checkpoint**: Old namespace removed, all tests passing
 
@@ -131,12 +131,12 @@ Single library project structure:
 
 **Purpose**: Update all user-facing documentation and prepare for release
 
-- [ ] T032 [P] Update README.md FAQ section (line 616-623) to use typeid.uuid instead of typeid.impl.uuid
-- [ ] T033 [P] Add CHANGELOG.md entry for breaking change: "BREAKING: Moved UUID utilities from typeid.impl.uuid to typeid.uuid"
-- [ ] T034 [P] Add migration note to CHANGELOG.md: "Replace requires of typeid.impl.uuid with typeid.uuid"
-- [ ] T035 [P] Add at least 2 usage examples of typeid.uuid namespace to README.md
-- [ ] T036 Verify cljdoc will generate documentation for new public namespace (check namespace is not marked :no-doc)
-- [ ] T037 [P] Update version number in appropriate files for 0.3.0 release (or next version)
+- [x] T032 [P] Update README.md FAQ section (line 616-623) to use typeid.uuid instead of typeid.impl.uuid
+- [x] T033 [P] Add CHANGELOG.md entry for breaking change: "BREAKING: Moved UUID utilities from typeid.impl.uuid to typeid.uuid"
+- [x] T034 [P] Add migration note to CHANGELOG.md: "Replace requires of typeid.impl.uuid with typeid.uuid"
+- [x] T035 [P] Add at least 2 usage examples of typeid.uuid namespace to README.md
+- [x] T036 Verify cljdoc will generate documentation for new public namespace (check namespace is not marked :no-doc)
+- [x] T037 [P] Update version number in appropriate files for 0.3.0 release (or next version)
 
 **Checkpoint**: Documentation complete, ready for release
 
@@ -146,12 +146,12 @@ Single library project structure:
 
 **Purpose**: Verify performance and run final validation checks
 
-- [ ] T038 Run existing benchmarks for uuid->bytes (verify < 1μs on JVM, < 1μs on ClojureScript)
-- [ ] T039 Run existing benchmarks for bytes->uuid (verify < 1μs on JVM, < 1μs on ClojureScript)
-- [ ] T040 Run existing benchmarks for generate-uuidv7 (verify < 2μs on JVM, < 2μs on ClojureScript)
-- [ ] T041 Compare benchmark results to baseline: verify performance within 5% of previous implementation
-- [ ] T042 Run complete test suite on both platforms one final time
-- [ ] T043 Verify all success criteria from spec.md are met
+- [x] T038 Run existing benchmarks for uuid->bytes (verify < 1μs on JVM, < 1μs on ClojureScript)
+- [x] T039 Run existing benchmarks for bytes->uuid (verify < 1μs on JVM, < 1μs on ClojureScript)
+- [x] T040 Run existing benchmarks for generate-uuidv7 (verify < 2μs on JVM, < 2μs on ClojureScript)
+- [x] T041 Compare benchmark results to baseline: verify performance within 5% of previous implementation
+- [x] T042 Run complete test suite on both platforms one final time
+- [x] T043 Verify all success criteria from spec.md are met
 
 **Checkpoint**: All success criteria met, ready for PR/release
 

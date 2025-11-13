@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠️ BREAKING CHANGES
+
+- **UUID utilities moved from `typeid.impl.uuid` to `typeid.uuid` (public API)**
+
+  The UUID utility namespace has been promoted from internal (`impl`) to public API.
+
+  ```clojure
+  ;; v0.2.x and earlier (old)
+  (require '[typeid.impl.uuid :as uuid])
+
+  ;; v0.3.0+ (new)
+  (require '[typeid.uuid :as uuid])
+  ```
+
+  **Migration:**
+  - Replace all `typeid.impl.uuid` requires with `typeid.uuid`
+  - Function signatures are unchanged (`uuid->bytes`, `bytes->uuid`, `generate-uuidv7`)
+  - See README "UUID Utility Functions" section for usage examples
+
+### Added
+
+- **Public API**: `typeid.uuid` namespace now part of official public API
+  - `uuid->bytes` - Convert UUID objects to 16-byte arrays (JVM and ClojureScript)
+  - `bytes->uuid` - Convert 16-byte arrays to UUID objects (with round-trip guarantee)
+  - `generate-uuidv7` - Generate UUIDv7 bytes with timestamp-based ordering
+- **Documentation**: Added UUID utilities section to README with comprehensive examples
+- **Documentation**: Updated FAQ section to reference public `typeid.uuid` namespace
+
+### Changed
+
+- **Namespace**: Removed `typeid.impl.uuid` (private namespace)
+- **Documentation**: All references to `typeid.impl.uuid` updated to `typeid.uuid`
+
 ## [0.2.0] - 2025-11-13
 
 ### ⚠️ BREAKING CHANGES

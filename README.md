@@ -220,6 +220,45 @@ The `create` function has three arities:
 ;;=> "order_2qeh85amd9ct4vr9px628gkdkr"
 ```
 
+### UUID Utility Functions
+
+The `typeid.uuid` namespace provides utilities for working with UUID objects and bytes:
+
+```clojure
+(require '[typeid.uuid :as uuid]
+         '[typeid.core :as typeid])
+
+;; Convert UUID to bytes (for binary storage or protocols)
+(uuid/uuid->bytes #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+;;=> #object["[B" ... (16-byte array)]
+
+;; Convert bytes back to UUID
+(def uuid-bytes (byte-array [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                              0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
+(uuid/bytes->uuid uuid-bytes)
+;;=> #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+
+;; Generate UUIDv7 bytes (timestamp-ordered)
+(def uuidv7-bytes (uuid/generate-uuidv7))
+;;=> #object["[B" ... (16 bytes with timestamp)]
+
+;; Convert to UUID object
+(uuid/bytes->uuid uuidv7-bytes)
+;;=> #uuid "018d5e9e-..." (chronologically sortable)
+
+;; Complete workflow: Generate UUID → Create TypeID
+(let [uuid-bytes (uuid/generate-uuidv7)
+      uuid-obj (uuid/bytes->uuid uuid-bytes)]
+  (typeid/create "order" uuid-obj))
+;;=> "order_01h5fskfsk4fpeqwnsyz5hj55t"
+```
+
+These functions are useful for:
+- Binary storage (databases with byte columns)
+- Network protocols requiring raw bytes
+- Low-level UUID manipulation
+- Generating timestamp-ordered UUIDs without TypeID wrapping
+
 ### Working with UUIDs and Codec Operations
 
 For low-level operations, use the `typeid.codec` namespace:
@@ -613,7 +652,7 @@ No, the TypeID specification requires the underscore (`_`) separator. This ensur
 In version 0.2.0+, `parse` returns platform-native UUID objects (not byte arrays). If you need the raw bytes:
 
 ```clojure
-(require '[typeid.impl.uuid :as uuid])
+(require '[typeid.uuid :as uuid])
 
 (let [{:keys [uuid]} (typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
       uuid-bytes (uuid/uuid->bytes uuid)]
