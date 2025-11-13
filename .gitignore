@@ -23,7 +23,6 @@ node_modules/
 package-lock.json
 pom.xml
 pom.xml.asc
-docs/
 
 # ClojureScript
 .cljs_node_repl/

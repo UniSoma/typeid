@@ -100,7 +100,7 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ## Documentation
 
-- **[API Reference (Codox)](https://unisoma.github.io/typeid/)** - Full API documentation
+- **[API Reference (cljdoc)](https://cljdoc.org/d/io.github.unisoma/typeid)** - Full API documentation
 - **[Quickstart Guide](specs/001-typeid-implementation/quickstart.md)** - Step-by-step tutorial
 - **[TypeID Specification](https://github.com/jetify-com/typeid)** - Official spec
 
@@ -373,9 +373,6 @@ bb bench             # Run benchmarks
 # Build
 bb build             # Clean and build JAR
 bb install           # Install to local Maven repo
-
-# Documentation
-bb docs              # Generate Codox docs
 
 # CI workflows
 bb ci:check          # Run all CI checks

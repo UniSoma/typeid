@@ -54,22 +54,6 @@
    :task (apply shell "clojure" "-M:dev" "-m" "benchmarks.core-bench" *command-line-args*)}
 
   ;; ============================================================================
-  ;; Documentation
-  ;; ============================================================================
-
-  docs
-  {:doc "Generate Codox API documentation"
-   :task (shell "clojure -X:codox")}
-
-  docs:clean
-  {:doc "Remove generated documentation"
-   :task (shell "rm -rf docs")}
-
-  docs:regenerate
-  {:doc "Clean and regenerate documentation"
-   :depends [docs:clean docs]}
-
-  ;; ============================================================================
   ;; Build
   ;; ============================================================================
 
@@ -184,7 +168,7 @@
 
   tree
   {:doc "Show project file structure (supports additional tree args)"
-   :task (apply shell "tree" "-I" "?|target|node_modules|.git|.cpcache|.clj-kondo/.cache|docs" "-L" "3" *command-line-args*)}
+   :task (apply shell "tree" "-I" "?|target|node_modules|.git|.cpcache|.clj-kondo/.cache" "-L" "3" *command-line-args*)}
 
   outdated
   {:doc "Check for outdated dependencies (supports args: --upgrade, etc.)"
@@ -224,7 +208,7 @@
            (println "Version:      0.1.0")
            (println "Repository:   https://github.com/UniSoma/typeid")
            (println "Clojars:      https://clojars.org/io.github.unisoma/typeid")
-           (println "API Docs:     https://unisoma.github.io/typeid/")
+           (println "API Docs:     https://cljdoc.org/d/io.github.unisoma/typeid")
            (println)
            (println "Common commands:")
            (println "  bb test              Run all JVM tests")

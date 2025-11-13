@@ -152,13 +152,13 @@ See the [Migration Guide](README.md#migration-guide) in the README for detailed 
 
 - **Documentation**:
   - Comprehensive README with examples and troubleshooting
-  - API documentation with Codox
+  - API documentation via cljdoc
   - Quickstart guide with integration examples
   - CONTRIBUTING guide for developers
   - REPL utilities for interactive development
 
 - **Build and tooling**:
-  - deps.edn with :dev, :test, :build, :codox, :coverage aliases
+  - deps.edn with :dev, :test, :build, and :coverage aliases
   - tools.build for JAR packaging and deployment
   - clj-kondo configuration (zero-tolerance for warnings)
   - cljfmt configuration for consistent formatting
