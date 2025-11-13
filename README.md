@@ -106,14 +106,11 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 ## Documentation
 
 - **[API Reference (cljdoc)](https://cljdoc.org/d/io.github.unisoma/typeid)** - Full API documentation
-- **[Quickstart Guide](specs/001-typeid-implementation/quickstart.md)** - Step-by-step tutorial
 - **[TypeID Specification](https://github.com/jetify-com/typeid)** - Official spec
 
 ## Usage Examples
 
 ### Basic Operations
-
-See Quick Start above for common patterns.
 
 ### Error Handling
 
@@ -280,6 +277,139 @@ Extract components from a TypeID:
 ;;=> UUID: 018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a
 ```
 
+## Common Patterns
+
+### Generate ID for New Entity
+
+```clojure
+(defn create-user [name email]
+  (let [user-id (typeid/create "user")]
+    {:id user-id
+     :name name
+     :email email
+     :created-at (System/currentTimeMillis)}))
+
+(create-user "Alice" "alice@example.com")
+;;=> {:id "user_01h5fskfsk4fpeqwnsyz5hj55t"
+;;    :name "Alice"
+;;    :email "alice@example.com"
+;;    :created-at 1699564800000}
+```
+
+### Validate TypeID from User Input
+
+```clojure
+(defn get-user-by-id [typeid-str]
+  (if-let [error (typeid/explain typeid-str)]
+    {:error (str "Invalid TypeID: " (:message error))}
+    (fetch-user-from-db typeid-str)))
+
+(get-user-by-id "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:id "user_..." :name "Alice" ...}
+
+(get-user-by-id "invalid")
+;;=> {:error "Invalid TypeID: Invalid format: does not match TypeID pattern"}
+```
+
+### Store UUID in Database, Return TypeID to Clients
+
+```clojure
+(require '[typeid.codec :as codec])
+
+(defn save-and-return-order [order-data]
+  (let [order-id (typeid/create "order")
+        {:keys [uuid]} (typeid/parse order-id)
+        uuid-hex (codec/uuid->hex uuid)]
+    ;; Save uuid-hex to database (efficient storage)
+    (save-to-db! {:uuid uuid-hex :data order-data})
+    ;; Return TypeID to client (human-readable)
+    {:id order-id :data order-data}))
+
+(save-and-return-order {:items [...] :total 99.99})
+;;=> {:id "order_01h5fskp7y2t3z9x8w6v5u4s3r" :data {...}}
+```
+
+### Fetch by TypeID, Query by UUID
+
+```clojure
+(require '[typeid.codec :as codec])
+
+(defn fetch-order [typeid-str]
+  (try
+    (let [uuid-bytes (codec/decode typeid-str)
+          uuid-hex (codec/uuid->hex uuid-bytes)]
+      (query-db {:uuid uuid-hex}))
+    (catch Exception e
+      {:error (str "Invalid TypeID: " (ex-message e))})))
+
+(fetch-order "order_01h5fskp7y2t3z9x8w6v5u4s3r")
+;;=> {:uuid "..." :items [...] :total 99.99}
+```
+
+### Prefix-Based Type Checking
+
+```clojure
+(defn delete-user [typeid-str]
+  (try
+    (let [{:keys [prefix uuid]} (typeid/parse typeid-str)]
+      (if (= "user" prefix)
+        (do
+          (delete-from-db! uuid)
+          {:status :deleted :id typeid-str})
+        {:error "Expected user TypeID, got different type"}))
+    (catch Exception e
+      {:error (str "Invalid TypeID: " (ex-message e))})))
+
+(delete-user "user_01h5fskfsk4fpeqwnsyz5hj55t")
+;;=> {:status :deleted :id "user_01h5fskfsk4fpeqwnsyz5hj55t"}
+
+(delete-user "order_01h5fskp7y2t3z9x8w6v5u4s3r")
+;;=> {:error "Expected user TypeID, got different type"}
+```
+
+### Integration with PostgreSQL
+
+```clojure
+(require '[next.jdbc :as jdbc]
+         '[typeid.codec :as codec])
+
+;; Store UUID as UUID column
+(defn insert-user [ds name email]
+  (let [user-id (typeid/create "user")
+        {:keys [uuid]} (typeid/parse user-id)
+        uuid-hex (codec/uuid->hex uuid)]
+    (jdbc/execute-one! ds
+      ["INSERT INTO users (id, name, email) VALUES (?::uuid, ?, ?)"
+       uuid-hex name email])
+    {:typeid user-id :name name :email email}))
+
+(defn find-user [ds typeid-str]
+  (let [uuid-bytes (codec/decode typeid-str)
+        uuid-hex (codec/uuid->hex uuid-bytes)]
+    (jdbc/execute-one! ds
+      ["SELECT * FROM users WHERE id = ?::uuid" uuid-hex])))
+```
+
+### Integration with Web APIs (Ring)
+
+```clojure
+(require '[compojure.core :refer [defroutes GET POST]]
+         '[ring.util.response :refer [response status]])
+
+(defroutes app-routes
+  (POST "/users" {body :body}
+    (let [user-id (typeid/create "user")]
+      (response {:id user-id
+                 :name (:name body)
+                 :email (:email body)})))
+
+  (GET "/users/:id" [id]
+    (if-let [error (typeid/explain id)]
+      (-> (response {:error (:message error)})
+          (status 400))
+      (response (fetch-user-from-db id)))))
+```
+
 ## Performance
 
 The library is designed for high performance with the following **target benchmarks**:
@@ -377,6 +507,113 @@ The benchmark suite uses [Criterium](https://github.com/hugoduncan/criterium) an
 **JVM**: Uses `System.currentTimeMillis()` and `java.security.SecureRandom`
 - No additional dependencies required
 - Works on JDK 11+, tested on JDK 17 and 21
+
+## FAQ
+
+**Can I use TypeIDs as database primary keys?**
+
+Yes! Store the UUID portion (16 bytes or hex string) as the primary key, and generate the TypeID string when sending data to clients. This gives you the best of both worlds: efficient storage and human-readable IDs in your API.
+
+```clojure
+;; Store UUID in database
+(let [user-id (typeid/create "user")
+      {:keys [uuid]} (typeid/parse user-id)]
+  (save-to-db! {:id uuid :name "Alice"}))
+
+;; Return TypeID to clients
+(defn get-user [uuid]
+  (let [user (fetch-from-db uuid)
+        user-id (typeid/create "user" (:id user))]
+    (assoc user :id user-id)))
+```
+
+**Are TypeIDs sortable?**
+
+Yes! TypeIDs are chronologically sortable because they're based on UUIDv7, which encodes the timestamp in the first 48 bits. This means TypeIDs created later will sort after TypeIDs created earlier.
+
+```clojure
+(def id1 (typeid/create "user"))
+(Thread/sleep 10)
+(def id2 (typeid/create "user"))
+
+(< id1 id2)  ;;=> true (id1 was created first)
+```
+
+**Can I have TypeIDs without a prefix?**
+
+Yes! Use `nil` or no arguments to create prefix-less TypeIDs:
+
+```clojure
+(typeid/create nil)
+;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
+
+(typeid/create)
+;;=> "01h5fskfsk4fpeqwnsyz5hj55t"
+```
+
+**Are single-character prefixes allowed?**
+
+Technically yes, but the spec recommends at least 3 characters for clarity. Use descriptive prefixes like "user" instead of "u" to make your IDs more self-documenting.
+
+**Can I encode UUIDv4 (or other non-UUIDv7) as a TypeID?**
+
+Yes! The `create` function with two arguments accepts any UUID:
+
+```clojure
+(typeid/create "legacy" #uuid "550e8400-e29b-41d4-a716-446655440000")
+;;=> "legacy_2qeh85amd9ct4vr9px628gkdkr"
+```
+
+Note: Only the one-argument form generates UUIDv7. Other UUID versions won't be chronologically sortable.
+
+**How do I migrate from UUIDs to TypeIDs?**
+
+If you have existing UUIDs in your system, encode them with a prefix:
+
+```clojure
+(require '[typeid.codec :as codec])
+
+;; From UUID object
+(typeid/create "user" existing-uuid)
+
+;; From hex string
+(let [uuid-bytes (codec/hex->uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")]
+  (codec/encode uuid-bytes "user"))
+```
+
+The underlying UUID remains the same, so your database queries continue to work.
+
+**What's the performance impact?**
+
+TypeID operations are extremely fast (< 2μs for create/parse). At 2μs per operation, you can generate 500K TypeIDs per second on a single core. This is negligible compared to typical I/O operations:
+- Database queries: 1-10ms (500-5000x slower)
+- Network requests: 10-100ms (5,000-50,000x slower)
+
+Even at high traffic (10K req/s), ID generation consumes less than 2% CPU time.
+
+**Do I need to validate TypeIDs from my own system?**
+
+If you're generating TypeIDs within your system and storing them, you generally don't need to validate them again when reading from your database. However, **always validate** TypeIDs that come from:
+- User input (URL parameters, form submissions)
+- External APIs
+- Untrusted sources
+
+```clojure
+;; From database (trusted) - no validation needed
+(defn get-user-from-db [uuid]
+  (let [user (fetch-user uuid)]
+    (typeid/create "user" (:id user))))
+
+;; From user input (untrusted) - validate first
+(defn get-user-by-id [typeid-str]
+  (if-let [error (typeid/explain typeid-str)]
+    {:error (:message error)}
+    (fetch-user typeid-str)))
+```
+
+**Can I customize the prefix separator?**
+
+No, the TypeID specification requires the underscore (`_`) separator. This ensures consistency across all TypeID implementations and languages.
 
 ## Development
 
