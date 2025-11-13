@@ -209,6 +209,25 @@
     #(v/valid-uuid-bytes? sample-uuid-bytes)
     500))
 
+(defn bench-bytes-to-uuid
+  "Benchmark bytes->uuid conversion.
+   Target: < 500ns"
+  []
+  (run-benchmark
+    "uuid/bytes->uuid"
+    #(uuid/bytes->uuid sample-uuid-bytes)
+    500))
+
+(defn bench-uuid-to-bytes
+  "Benchmark uuid->bytes conversion.
+   Target: < 500ns"
+  []
+  (let [sample-uuid (uuid/bytes->uuid sample-uuid-bytes)]
+    (run-benchmark
+      "uuid/uuid->bytes"
+      #(uuid/uuid->bytes sample-uuid)
+      500)))
+
 ;; ============================================================================
 ;; Main Entry Point
 ;; ============================================================================
@@ -238,6 +257,8 @@
   (bench-base32-encode)
   (bench-base32-decode)
   (bench-uuidv7-generation)
+  (bench-bytes-to-uuid)
+  (bench-uuid-to-bytes)
 
   ;; Validation benchmarks
   (println "\n\n=== Validation Functions ===")

@@ -140,3 +140,83 @@
                  :input uuid
                  :expected "cljs.core/UUID"
                  :actual (str (type uuid))})))))
+
+(defn bytes->uuid
+  "Convert a 16-byte array to a platform-native UUID object.
+
+   Accepts:
+   - JVM: byte array (byte[])
+   - ClojureScript: Uint8Array
+
+   Returns platform-native UUID object:
+   - JVM: java.util.UUID
+   - ClojureScript: cljs.core/UUID
+
+   This is the inverse operation of `uuid->bytes`.
+
+   Examples:
+   ```clojure
+   ;; JVM
+   (bytes->uuid (byte-array [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                              0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
+   ;; => #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\"
+
+   ;; ClojureScript
+   (bytes->uuid (js/Uint8Array. [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                                  0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
+   ;; => #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\"
+
+   ;; Round-trip property
+   (= uuid (-> uuid uuid->bytes bytes->uuid)) ; => true
+   ```
+
+   Throws if input is not exactly 16 bytes."
+  [uuid-bytes]
+  #?(:clj
+     (if (and (bytes? uuid-bytes) (= 16 (alength ^bytes uuid-bytes)))
+       (let [;; Extract most significant bits (bytes 0-7)
+             msb (long (reduce (fn [acc b]
+                                 (bit-or (bit-shift-left acc 8)
+                                   (bit-and (long b) 0xFF)))
+                         0
+                         (take 8 uuid-bytes)))
+             ;; Extract least significant bits (bytes 8-15)
+             lsb (long (reduce (fn [acc b]
+                                 (bit-or (bit-shift-left acc 8)
+                                   (bit-and (long b) 0xFF)))
+                         0
+                         (drop 8 uuid-bytes)))]
+         (java.util.UUID. msb lsb))
+       (throw (ex-info "Invalid UUID bytes: expected exactly 16 bytes"
+                {:type :typeid/invalid-uuid
+                 :message "UUID must be exactly 16 bytes"
+                 :input uuid-bytes
+                 :expected "16-byte array"
+                 :actual (if (bytes? uuid-bytes)
+                           (str (alength ^bytes uuid-bytes) " bytes")
+                           "not a byte array")})))
+     :cljs
+     (if (and (instance? js/Uint8Array uuid-bytes) (= 16 (.-length uuid-bytes)))
+       ;; Convert bytes to hex string, then to UUID
+       (let [hex-str (apply str (map (fn [b]
+                                       (let [hex (.toString b 16)]
+                                         (if (= 1 (.-length hex))
+                                           (str "0" hex)
+                                           hex)))
+                                  uuid-bytes))
+             ;; Insert hyphens at proper positions for UUID format
+             ;; xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+             formatted-uuid (str (.substr hex-str 0 8) "-"
+                              (.substr hex-str 8 4) "-"
+                              (.substr hex-str 12 4) "-"
+                              (.substr hex-str 16 4) "-"
+                              (.substr hex-str 20 12))]
+         (cljs.core/uuid formatted-uuid))
+       (throw (ex-info "Invalid UUID bytes: expected exactly 16 bytes"
+                {:type :typeid/invalid-uuid
+                 :message "UUID must be exactly 16 bytes"
+                 :input uuid-bytes
+                 :expected "16-byte Uint8Array"
+                 :actual (if (instance? js/Uint8Array uuid-bytes)
+                           (str (.-length uuid-bytes) " bytes")
+                           "not a Uint8Array")})))))

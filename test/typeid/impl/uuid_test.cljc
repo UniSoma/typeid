@@ -120,3 +120,101 @@
       (let [uuid-bytes (uuid/generate-uuidv7)]
         (is (v/valid-uuidv7-bytes? uuid-bytes)
           "Generated UUID should pass strict UUIDv7 validation")))))
+
+;; T005-T010: bytes->uuid function tests
+
+(deftest bytes->uuid-basic-test
+  (testing "bytes->uuid converts 16 bytes to UUID object"
+    (let [uuid-bytes #?(:clj (byte-array [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                                          0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a])
+                        :cljs (js/Uint8Array. [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                                               0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
+          result (uuid/bytes->uuid uuid-bytes)]
+      (is (some? result))
+      #?(:clj (is (instance? java.util.UUID result))
+         :cljs (is (uuid? result)))
+      (is (= "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a" (str result)))))
+
+  (testing "bytes->uuid requires exactly 16 bytes"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Invalid UUID bytes: expected exactly 16 bytes"
+          (uuid/bytes->uuid #?(:clj (byte-array 15)
+                               :cljs (js/Uint8Array. 15)))))
+
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Invalid UUID bytes: expected exactly 16 bytes"
+          (uuid/bytes->uuid #?(:clj (byte-array 17)
+                               :cljs (js/Uint8Array. 17)))))))
+
+(deftest bytes->uuid-round-trip-test
+  (testing "bytes->uuid round-trips correctly with uuid->bytes"
+    (let [original-uuid #?(:clj (java.util.UUID/fromString "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a")
+                           :cljs (cljs.core/uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"))
+          uuid-bytes (uuid/uuid->bytes original-uuid)
+          recovered-uuid (uuid/bytes->uuid uuid-bytes)]
+      (is (= original-uuid recovered-uuid)
+        "Round-trip UUID -> bytes -> UUID should preserve value")))
+
+  (testing "bytes->uuid with uuid->bytes produces identical UUIDs"
+    (let [test-uuids [#?(:clj (java.util.UUID/fromString "00000000-0000-0000-0000-000000000000")
+                         :cljs (cljs.core/uuid "00000000-0000-0000-0000-000000000000"))
+                      #?(:clj (java.util.UUID/fromString "ffffffff-ffff-ffff-ffff-ffffffffffff")
+                         :cljs (cljs.core/uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                      #?(:clj (java.util.UUID/randomUUID)
+                         :cljs (random-uuid))]]
+      (doseq [test-uuid test-uuids]
+        (is (= test-uuid (-> test-uuid uuid/uuid->bytes uuid/bytes->uuid))
+          (str "Round-trip should work for UUID: " test-uuid))))))
+
+(deftest bytes->uuid-edge-cases-test
+  (testing "bytes->uuid handles zero UUID"
+    (let [zero-bytes #?(:clj (byte-array 16)
+                        :cljs (js/Uint8Array. 16))
+          zero-uuid (uuid/bytes->uuid zero-bytes)]
+      (is (= "00000000-0000-0000-0000-000000000000" (str zero-uuid)))))
+
+  (testing "bytes->uuid handles max UUID (all 0xFF)"
+    (let [max-bytes #?(:clj (byte-array (repeat 16 -1))
+                       :cljs (js/Uint8Array. (into-array (repeat 16 0xFF))))
+          max-uuid (uuid/bytes->uuid max-bytes)]
+      (is (= "ffffffff-ffff-ffff-ffff-ffffffffffff" (str max-uuid)))))
+
+  (testing "bytes->uuid handles various UUID versions"
+    ;; UUIDv1 example
+    (let [v1-bytes #?(:clj (byte-array [0x6b 0xa7 0xb8 0x10 0x9d 0xad 0x11 0xd1
+                                        0x80 0xb4 0x00 0xc0 0x4f 0xd4 0x30 0xc8])
+                      :cljs (js/Uint8Array. [0x6b 0xa7 0xb8 0x10 0x9d 0xad 0x11 0xd1
+                                             0x80 0xb4 0x00 0xc0 0x4f 0xd4 0x30 0xc8]))
+          v1-uuid (uuid/bytes->uuid v1-bytes)]
+      (is (some? v1-uuid)))
+
+    ;; UUIDv4 example (random)
+    (let [v4-bytes #?(:clj (byte-array [0x55 0x0e 0x84 0x00 0xe2 0x9b 0x41 0xd4
+                                        0xa7 0x16 0x44 0x66 0x55 0x44 0x00 0x00])
+                      :cljs (js/Uint8Array. [0x55 0x0e 0x84 0x00 0xe2 0x9b 0x41 0xd4
+                                             0xa7 0x16 0x44 0x66 0x55 0x44 0x00 0x00]))
+          v4-uuid (uuid/bytes->uuid v4-bytes)]
+      (is (some? v4-uuid)))))
+
+(deftest bytes->uuid-determinism-test
+  (testing "bytes->uuid produces same UUID for same bytes"
+    (let [test-bytes #?(:clj (byte-array [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                                          0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a])
+                        :cljs (js/Uint8Array. [0x01 0x8c 0x3f 0x9e 0x9e 0x4e 0x7a 0x8a
+                                               0x8b 0x2a 0x7e 0x8e 0x9e 0x4e 0x7a 0x8a]))
+          uuid1 (uuid/bytes->uuid test-bytes)
+          uuid2 (uuid/bytes->uuid test-bytes)]
+      (is (= uuid1 uuid2)
+        "Same bytes should produce equal UUIDs")))
+
+  (testing "bytes->uuid is deterministic across multiple calls"
+    (dotimes [_ 10]
+      (let [test-uuid #?(:clj (java.util.UUID/randomUUID)
+                         :cljs (random-uuid))
+            uuid-bytes (uuid/uuid->bytes test-uuid)
+            recovered1 (uuid/bytes->uuid uuid-bytes)
+            recovered2 (uuid/bytes->uuid uuid-bytes)]
+        (is (= recovered1 recovered2))
+        (is (= test-uuid recovered1))))))

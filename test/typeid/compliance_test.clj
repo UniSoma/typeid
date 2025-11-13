@@ -9,7 +9,8 @@
     [clojure.string :as string]
     [clojure.test :refer [deftest is testing]]
     [typeid.codec :as codec]
-    [typeid.core :as t]))
+    [typeid.core :as t]
+    [typeid.impl.uuid :as uuid]))
 
 (set! *warn-on-reflection* true)
 
@@ -61,8 +62,9 @@
         (is (= expected-prefix (:prefix parsed))
           (str "Test case '" test-name "' prefix mismatch: "
             "expected=" expected-prefix " actual=" (:prefix parsed)))
-        ;; Convert UUID bytes to hex for comparison
-        (let [uuid-hex (codec/uuid->hex (:uuid parsed))]
+        ;; Convert UUID object to bytes, then to hex for comparison
+        (let [uuid-bytes (uuid/uuid->bytes (:uuid parsed))
+              uuid-hex (codec/uuid->hex uuid-bytes)]
           (is (= expected-uuid-clean uuid-hex)
             (str "Test case '" test-name "' UUID mismatch: "
               "expected=" expected-uuid-clean " actual=" uuid-hex)))))))
@@ -94,7 +96,9 @@
       (let [test-name (:name test-case)
             original-typeid (:typeid test-case)
             parsed (t/parse original-typeid)
-            re-encoded (codec/encode (:uuid parsed) (:prefix parsed))]
+            ;; Convert UUID object to bytes for encoding
+            uuid-bytes (uuid/uuid->bytes (:uuid parsed))
+            re-encoded (codec/encode uuid-bytes (:prefix parsed))]
         (is (= original-typeid re-encoded)
           (str "Test case '" test-name "' round-trip failed: "
             "original=" original-typeid " re-encoded=" re-encoded))))))

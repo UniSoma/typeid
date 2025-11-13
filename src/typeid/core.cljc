@@ -118,7 +118,7 @@
    A map with decomposed parts:
    - `:prefix` - Type prefix (empty string if none)
    - `:suffix` - 26-character base32 suffix
-   - `:uuid` - 16-byte UUID (decoded from suffix)
+   - `:uuid` - Platform-native UUID object (java.util.UUID on JVM, cljs.core/UUID in ClojureScript)
    - `:typeid` - Original TypeID string
 
    ## Exceptions
@@ -131,17 +131,26 @@
    (parse \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
    ;;=> {:prefix \"user\"
    ;;     :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
-   ;;     :uuid #bytes[...]
+   ;;     :uuid #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\"
    ;;     :typeid \"user_01h5fskfsk4fpeqwnsyz5hj55t\"}
 
    (parse \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
    ;;=> ExceptionInfo: {:type :typeid/invalid-format, :message \"...\", ...}
+
+   ;; Round-trip conversion with create
+   (let [original-uuid #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\"
+         typeid (create \"user\" original-uuid)
+         recovered-uuid (:uuid (parse typeid))]
+     (= original-uuid recovered-uuid))
+   ;;=> true
    ```
 
    See also: [[explain]] (for validation without exceptions), [[create]]"
   [typeid-str]
   ;; Use codec/decode to validate and extract UUID bytes
   (let [uuid-bytes (codec/decode typeid-str)
+        ;; Convert bytes to platform-native UUID object
+        uuid-obj (uuid/bytes->uuid uuid-bytes)
         ;; Split to extract prefix and suffix
         [prefix suffix] (if (str/includes? typeid-str "_")
                           (let [idx (str/last-index-of typeid-str "_")]
@@ -149,7 +158,7 @@
                           ["" typeid-str])]
     {:prefix prefix
      :suffix suffix
-     :uuid uuid-bytes
+     :uuid uuid-obj
      :typeid typeid-str}))
 
 ;; User Story 1: Explain function (replaces validate)
