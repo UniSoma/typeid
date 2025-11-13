@@ -4,7 +4,29 @@
    TypeIDs are type-safe, K-sortable, globally unique identifiers that combine
    a type prefix with a UUIDv7 suffix encoded in base32.
 
-   Example: user_01h5fskfsk4fpeqwnsyz5hj55t"
+   ## Quick Example
+
+   ```clojure
+   (require '[typeid.core :as typeid])
+
+   ;; Generate a new TypeID
+   (typeid/create \"user\")
+   ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+   ;; Parse and validate
+   (typeid/parse \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> {:prefix \"user\", :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\", ...}
+
+   ;; Validate without exceptions
+   (typeid/explain \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> nil ; Valid!
+   ```
+
+   ## Main Functions
+
+   - [[create]] - Generate new TypeIDs or create from existing UUIDs
+   - [[parse]] - Parse TypeID into components (throws on invalid)
+   - [[explain]] - Validate TypeID and get error details (no exceptions)"
   (:require [clojure.string :as str]
     [typeid.codec :as codec]
     [typeid.impl.uuid :as uuid]
@@ -16,56 +38,66 @@
 (defn create
   "Create a TypeID with flexible options.
 
-   Three arities:
-   1. Zero-arity: Generate new TypeID with no prefix
-   2. One-arity: Generate new TypeID with given prefix
-   3. Two-arity: Create TypeID from existing UUID with given prefix
+   ## Arities
 
-   The prefix can be:
-   - A string (0-63 lowercase characters matching [a-z]([a-z_]{0,61}[a-z])?)
-   - A keyword (its name will be used as the prefix)
-   - nil or empty string (generates a prefix-less TypeID)
+   1. **Zero-arity**: Generate new TypeID with no prefix
+   2. **One-arity**: Generate new TypeID with given prefix
+   3. **Two-arity**: Create TypeID from existing UUID with given prefix
 
-   The uuid (two-arity only) must be a platform-native UUID object:
-   - JVM: java.util.UUID
-   - ClojureScript: cljs.core/UUID
+   ## Parameters
+
+   **prefix** (optional) - Can be:
+   - A string: 0-63 lowercase characters matching `[a-z]([a-z_]{0,61}[a-z])?`
+   - A keyword: its name will be used as the prefix
+   - `nil` or empty string: generates a prefix-less TypeID
+
+   **uuid** (two-arity only) - Platform-native UUID object:
+   - JVM: `java.util.UUID`
+   - ClojureScript: `cljs.core/UUID`
 
    Accepts any UUID version (v1, v4, v7, etc.) and edge cases (all-zeros, all-ones).
 
-   Returns TypeID string like \"user_01h5fskfsk4fpeqwnsyz5hj55t\".
+   ## Returns
 
-   Throws ExceptionInfo with structured error data if prefix or UUID is invalid.
+   TypeID string like `\"user_01h5fskfsk4fpeqwnsyz5hj55t\"`.
 
-   Examples:
-     ;; Zero-arity (new TypeID, no prefix)
-     (create)
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+   ## Exceptions
 
-     ;; One-arity (new TypeID with prefix)
-     (create \"user\")
-     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+   Throws `ExceptionInfo` with structured error data if prefix or UUID is invalid.
 
-     (create :user)
-     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+   ## Examples
 
-     (create nil)
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+   ```clojure
+   ;; Zero-arity (new TypeID, no prefix)
+   (create)
+   ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
-     ;; Two-arity (from existing UUID)
-     (create \"user\" #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
-     ;;=> \"user_01h455vb4pex5vsknk084sn02q\"
+   ;; One-arity (new TypeID with prefix)
+   (create \"user\")
+   ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
 
-     (create nil #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
-     ;;=> \"01h455vb4pex5vsknk084sn02q\"
+   (create :user)
+   ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
 
-     ;; Invalid inputs throw exceptions
-     (create \"User\")
-     ;;=> ExceptionInfo: {:type :typeid/invalid-prefix, ...}
+   (create nil)
+   ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
 
-     (create \"user\" \"not-a-uuid\")
-     ;;=> ExceptionInfo: {:type :typeid/invalid-uuid, ...}
+   ;; Two-arity (from existing UUID)
+   (create \"user\" #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
+   ;;=> \"user_01h455vb4pex5vsknk084sn02q\"
 
-   See also: `parse`, `explain`"
+   (create nil #uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
+   ;;=> \"01h455vb4pex5vsknk084sn02q\"
+
+   ;; Invalid inputs throw exceptions
+   (create \"User\")
+   ;;=> ExceptionInfo: {:type :typeid/invalid-prefix, ...}
+
+   (create \"user\" \"not-a-uuid\")
+   ;;=> ExceptionInfo: {:type :typeid/invalid-uuid, ...}
+   ```
+
+   See also: [[parse]], [[explain]]"
   (^String [] (create nil))
   (^String [prefix]
    ;; Generate new UUIDv7 and encode
@@ -81,25 +113,32 @@
 (defn parse
   "Parse a TypeID string into its components.
 
-   Returns a map with decomposed parts:
-   - :prefix   Type prefix (empty string if none)
-   - :suffix   26-character base32 suffix
-   - :uuid     16-byte UUID (decoded from suffix)
-   - :typeid   Original TypeID string
+   ## Returns
 
-   Throws ExceptionInfo with structured error data if the input is invalid.
+   A map with decomposed parts:
+   - `:prefix` - Type prefix (empty string if none)
+   - `:suffix` - 26-character base32 suffix
+   - `:uuid` - 16-byte UUID (decoded from suffix)
+   - `:typeid` - Original TypeID string
 
-   Examples:
-     (parse \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> {:prefix \"user\"
-     ;;     :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
-     ;;     :uuid #bytes[...]
-     ;;     :typeid \"user_01h5fskfsk4fpeqwnsyz5hj55t\"}
+   ## Exceptions
 
-     (parse \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> ExceptionInfo: {:type :typeid/invalid-format, :message \"...\", ...}
+   Throws `ExceptionInfo` with structured error data if the input is invalid.
 
-   See also: `explain` (for validation without exceptions), `create`"
+   ## Examples
+
+   ```clojure
+   (parse \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> {:prefix \"user\"
+   ;;     :suffix \"01h5fskfsk4fpeqwnsyz5hj55t\"
+   ;;     :uuid #bytes[...]
+   ;;     :typeid \"user_01h5fskfsk4fpeqwnsyz5hj55t\"}
+
+   (parse \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> ExceptionInfo: {:type :typeid/invalid-format, :message \"...\", ...}
+   ```
+
+   See also: [[explain]] (for validation without exceptions), [[create]]"
   [typeid-str]
   ;; Use codec/decode to validate and extract UUID bytes
   (let [uuid-bytes (codec/decode typeid-str)
@@ -117,35 +156,40 @@
 (defn explain
   "Validate a TypeID and explain errors if invalid.
 
-   Returns nil if the input is a valid TypeID string.
+   Returns `nil` if the input is a valid TypeID string.
    Returns an error map with details if invalid or non-string.
 
+   ## Error Map Structure
+
    The error map includes:
-   - :type     Error category (namespaced keyword like :typeid/invalid-prefix)
-   - :message  Human-readable error description
-   - :input    The original input that caused the error
-   - :expected Expected format/value (optional)
-   - :actual   Actual problematic value (optional)
+   - `:type` - Error category (namespaced keyword like `:typeid/invalid-prefix`)
+   - `:message` - Human-readable error description
+   - `:input` - The original input that caused the error
+   - `:expected` - Expected format/value (optional)
+   - `:actual` - Actual problematic value (optional)
 
-   Examples:
-     (explain \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> nil  ; Valid
+   ## Examples
 
-     (explain \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> {:type :typeid/invalid-format
-     ;;     :message \"TypeID must be all lowercase\"
-     ;;     :input \"User_01h5fskfsk4fpeqwnsyz5hj55t\"
-     ;;     :expected \"lowercase string\"
-     ;;     :actual \"contains uppercase characters\"}
+   ```clojure
+   (explain \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> nil  ; Valid
 
-     (explain 12345)
-     ;;=> {:type :typeid/invalid-input-type
-     ;;     :message \"Invalid input type: expected string\"
-     ;;     :input 12345
-     ;;     :expected \"string\"
-     ;;     :actual \"number\"}
+   (explain \"User_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> {:type :typeid/invalid-format
+   ;;     :message \"TypeID must be all lowercase\"
+   ;;     :input \"User_01h5fskfsk4fpeqwnsyz5hj55t\"
+   ;;     :expected \"lowercase string\"
+   ;;     :actual \"contains uppercase characters\"}
 
-   See also: `parse` (throws exception on invalid input), `create`"
+   (explain 12345)
+   ;;=> {:type :typeid/invalid-input-type
+   ;;     :message \"Invalid input type: expected string\"
+   ;;     :input 12345
+   ;;     :expected \"string\"
+   ;;     :actual \"number\"}
+   ```
+
+   See also: [[parse]] (throws exception on invalid input), [[create]]"
   [input]
   (cond
     ;; Check if input is a string

@@ -2,13 +2,31 @@
   "Low-level codec operations for TypeID encoding and decoding.
 
    This namespace provides the building blocks for TypeID encoding/decoding:
-   - encode: UUID bytes + prefix → TypeID string
-   - decode: TypeID string → UUID bytes
-   - uuid->hex: UUID bytes → hex string
-   - hex->uuid: Hex string → UUID bytes
 
-   Most users should use the high-level API in typeid.core instead.
-   These functions are exposed for advanced use cases and testing."
+   ## Core Functions
+
+   - [[encode]] - UUID bytes + prefix → TypeID string
+   - [[decode]] - TypeID string → UUID bytes
+   - [[uuid->hex]] - UUID bytes → hex string
+   - [[hex->uuid]] - Hex string → UUID bytes
+
+   ## Usage Note
+
+   Most users should use the high-level API in [[typeid.core]] instead.
+   These functions are exposed for advanced use cases and testing.
+
+   ## Quick Example
+
+   ```clojure
+   (require '[typeid.codec :as codec])
+
+   (def uuid-bytes (byte-array 16)) ; Your UUID bytes
+   (codec/encode uuid-bytes \"user\")
+   ;;=> \"user_00000000000000000000000000\"
+
+   (codec/decode \"user_00000000000000000000000000\")
+   ;;=> #bytes[0x00 0x00 ... (16 bytes)]
+   ```"
   (:require [clojure.string :as str]
     [typeid.impl.base32 :as base32]
     [typeid.impl.util :as util]
@@ -19,27 +37,40 @@
 (defn encode
   "Encode UUID bytes with a prefix into a TypeID string.
 
-   Takes UUID bytes (16-byte array) and an optional prefix, returns a TypeID string.
-   Throws ex-info if inputs are invalid.
+   ## Parameters
 
-   The prefix can be:
-   - A string (0-63 lowercase alphanumeric matching [a-z]([a-z_]{0,61}[a-z])?)
-   - A keyword (its name will be used as the prefix)
-   - nil or empty string (generates prefix-less TypeID)
+   **uuid-bytes** - 16-byte array representing a UUID
 
-   Examples:
-     (def uuid-bytes (byte-array [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                   0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
-     (encode uuid-bytes \"user\")
-     ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+   **prefix** - Can be:
+   - A string: 0-63 lowercase alphanumeric matching `[a-z]([a-z_]{0,61}[a-z])?`
+   - A keyword: its name will be used as the prefix
+   - `nil` or empty string: generates prefix-less TypeID
 
-     (encode uuid-bytes nil)
-     ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+   ## Returns
 
-     (encode uuid-bytes :org)
-     ;;=> \"org_01h5fskfsk4fpeqwnsyz5hj55t\"
+   TypeID string with format `prefix_suffix` or just `suffix` if no prefix.
 
-   See also: `decode`, `typeid.core/create`"
+   ## Exceptions
+
+   Throws `ex-info` if inputs are invalid.
+
+   ## Examples
+
+   ```clojure
+   (def uuid-bytes (byte-array [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                 0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+
+   (encode uuid-bytes \"user\")
+   ;;=> \"user_01h5fskfsk4fpeqwnsyz5hj55t\"
+
+   (encode uuid-bytes nil)
+   ;;=> \"01h5fskfsk4fpeqwnsyz5hj55t\"
+
+   (encode uuid-bytes :org)
+   ;;=> \"org_01h5fskfsk4fpeqwnsyz5hj55t\"
+   ```
+
+   See also: [[decode]], [[typeid.core/create]]"
   ^String [uuid-bytes prefix]
   ;; Validate UUID bytes
   (when-not (v/valid-uuid-bytes? uuid-bytes)
@@ -71,19 +102,31 @@
 (defn decode
   "Decode a TypeID string to extract UUID bytes.
 
-   Takes a TypeID string and returns a 16-byte array (big-endian).
-   Throws ex-info if the input is invalid.
+   ## Parameters
 
-   Examples:
-     (decode \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-     ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+   **typeid-str** - A valid TypeID string (with or without prefix)
 
-     (decode \"01h5fskfsk4fpeqwnsyz5hj55t\")
-     ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-     ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+   ## Returns
 
-   See also: `encode`, `typeid.core/parse`"
+   16-byte array (big-endian) representing the UUID.
+
+   ## Exceptions
+
+   Throws `ex-info` if the input is invalid.
+
+   ## Examples
+
+   ```clojure
+   (decode \"user_01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+   ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+
+   (decode \"01h5fskfsk4fpeqwnsyz5hj55t\")
+   ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+   ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+   ```
+
+   See also: [[encode]], [[typeid.core/parse]]"
   ^bytes [typeid-str]
   ;; Basic validations
   (when-not (string? typeid-str)
@@ -143,16 +186,29 @@
 (defn uuid->hex
   "Convert UUID bytes to hexadecimal string.
 
-   Takes a 16-byte UUID array and returns a 32-character lowercase hex string
-   (no hyphens). Throws ex-info if input is invalid.
+   ## Parameters
 
-   Examples:
-     (def uuid-bytes (byte-array [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-                                   0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
-     (uuid->hex uuid-bytes)
-     ;;=> \"0188e5f5f34a7b3d9f2a1c5de67fa8c1\"
+   **uuid-bytes** - 16-byte UUID array
 
-   See also: `hex->uuid`"
+   ## Returns
+
+   32-character lowercase hex string (no hyphens).
+
+   ## Exceptions
+
+   Throws `ex-info` if input is invalid.
+
+   ## Examples
+
+   ```clojure
+   (def uuid-bytes (byte-array [0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+                                 0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]))
+
+   (uuid->hex uuid-bytes)
+   ;;=> \"0188e5f5f34a7b3d9f2a1c5de67fa8c1\"
+   ```
+
+   See also: [[hex->uuid]]"
   [uuid-bytes]
   (when-not (v/valid-uuid-bytes? uuid-bytes)
     (throw (ex-info "UUID must be exactly 16 bytes"
@@ -170,21 +226,35 @@
 (defn hex->uuid
   "Convert hexadecimal string to UUID bytes.
 
-   Takes a 32-character hex string (with or without hyphens, case-insensitive)
-   and returns a 16-byte UUID array. Throws ex-info if input is invalid.
+   ## Parameters
 
-   Examples:
-     (hex->uuid \"0188e5f5f34a7b3d9f2a1c5de67fa8c1\")
-     ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
-     ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+   **hex-string** - 32-character hex string
+   - With or without hyphens
+   - Case-insensitive
 
-     (hex->uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
-     ;;=> #bytes[0x01 0x8c 0x3f 0x9e ...]
+   ## Returns
 
-     (hex->uuid \"018C3F9E9E4E7A8A8B2A7E8E9E4E7A8A\")
-     ;;=> #bytes[0x01 0x8c 0x3f 0x9e ...]  ; Uppercase accepted
+   16-byte UUID array.
 
-   See also: `uuid->hex`"
+   ## Exceptions
+
+   Throws `ex-info` if input is invalid.
+
+   ## Examples
+
+   ```clojure
+   (hex->uuid \"0188e5f5f34a7b3d9f2a1c5de67fa8c1\")
+   ;;=> #bytes[0x01 0x88 0xe5 0xf5 0xf3 0x4a 0x7b 0x3d
+   ;;           0x9f 0x2a 0x1c 0x5d 0xe6 0x7f 0xa8 0xc1]
+
+   (hex->uuid \"018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a\")
+   ;;=> #bytes[0x01 0x8c 0x3f 0x9e ...]
+
+   (hex->uuid \"018C3F9E9E4E7A8A8B2A7E8E9E4E7A8A\")
+   ;;=> #bytes[0x01 0x8c 0x3f 0x9e ...]  ; Uppercase accepted
+   ```
+
+   See also: [[uuid->hex]]"
   ^bytes [hex-string]
   (when-not (string? hex-string)
     (throw (ex-info "Hex string must be a string"
