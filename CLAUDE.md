@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-10
 - Clojure 1.11+, ClojureScript (targeting JVM and JS platforms) + Zero runtime dependencies (library only); Kaocha + test.check for testing (002-api-simplification)
 - N/A (library does not handle storage) (002-api-simplification)
 - Clojure 1.11+ (JVM), ClojureScript 1.12+ (JS) + Zero runtime dependencies (only org.clojure/clojure and org.clojure/clojurescript) (003-parse-uuid-return)
+- Clojure 1.11+ (JVM), ClojureScript 1.12+ (JS) + Zero runtime dependencies (org.clojure/clojure and org.clojure/clojurescript only) (004-uuid-api-promotion)
+- N/A (library only, no persistence) (004-uuid-api-promotion)
 
 - Clojure 1.11+ (JVM) and ClojureScript (JS target); CI matrix testing Clojure 1.11/1.12 on JDK 17/21 (001-typeid-implementation)
 
@@ -25,10 +27,10 @@ tests/
 Clojure 1.11+ (JVM) and ClojureScript (JS target); CI matrix testing Clojure 1.11/1.12 on JDK 17/21: Follow standard conventions
 
 ## Recent Changes
+- 004-uuid-api-promotion: Added Clojure 1.11+ (JVM), ClojureScript 1.12+ (JS) + Zero runtime dependencies (org.clojure/clojure and org.clojure/clojurescript only)
 - 003-parse-uuid-return: Added Clojure 1.11+ (JVM), ClojureScript 1.12+ (JS) + Zero runtime dependencies (only org.clojure/clojure and org.clojure/clojurescript)
 - 002-api-simplification: Added Clojure 1.11+, ClojureScript (targeting JVM and JS platforms) + Zero runtime dependencies (library only); Kaocha + test.check for testing
 
-- 001-typeid-implementation: Added Clojure 1.11+ (JVM) and ClojureScript (JS target); CI matrix testing Clojure 1.11/1.12 on JDK 17/21
 
 <!-- MANUAL ADDITIONS START -->
 
