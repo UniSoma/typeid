@@ -5,9 +5,7 @@
     [clojure.test.check.generators :as gen]
     [clojure.test.check.properties :as prop]
     [typeid.codec :as codec]
-    [typeid.core :as t]
-    [typeid.impl.uuid :as uuid]
-    [typeid.validation :as v]))
+    [typeid.core :as t]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -132,7 +130,7 @@
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))
       (is (= typeid (:typeid parsed)))
       (is (some? (:uuid parsed)))
-      (is (v/valid-uuid-bytes? (:uuid parsed)))))
+      (is (uuid? (:uuid parsed)))))
 
   (testing "Parse TypeID without prefix"
     (let [typeid "01h5fskfsk4fpeqwnsyz5hj55t"
@@ -140,7 +138,7 @@
       (is (= "" (:prefix parsed)))
       (is (= "01h5fskfsk4fpeqwnsyz5hj55t" (:suffix parsed)))
       (is (= typeid (:typeid parsed)))
-      (is (v/valid-uuid-bytes? (:uuid parsed)))))
+      (is (uuid? (:uuid parsed)))))
 
   (testing "Parse TypeID with underscores in prefix"
     (let [typeid "my_user_type_01h5fskfsk4fpeqwnsyz5hj55t"
@@ -201,7 +199,7 @@
           (is (= prefix (:prefix parsed)))
           (is (= typeid (:typeid parsed)))
           (is (= 26 (count (:suffix parsed))))
-          (is (v/valid-uuid-bytes? (:uuid parsed)))))))
+          (is (uuid? (:uuid parsed)))))))
 
   (testing "Parse and re-generate produces different UUID but same prefix"
     (let [typeid1 (t/create "user")
@@ -611,11 +609,10 @@
       (is (string? typeid))
       (is (.startsWith typeid "user_"))
       (is (= 31 (count typeid)))
-      ;; Parse back and verify UUID bytes match
+      ;; Parse back and verify UUID objects match
       (let [parsed (t/parse typeid)
-            parsed-uuid-bytes (:uuid parsed)
-            uuid-bytes (uuid/uuid->bytes the-uuid)]
-        (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
+            parsed-uuid (:uuid parsed)]
+        (is (= the-uuid parsed-uuid))))))
 
 (deftest create-two-arity-keyword-prefix-test
   (testing "Create TypeID from keyword prefix and UUID"
@@ -632,11 +629,10 @@
       (is (string? typeid))
       (is (= 26 (count typeid)))
       (is (not (str/includes? typeid "_")))
-      ;; Parse back and verify UUID bytes match
+      ;; Parse back and verify UUID objects match
       (let [parsed (t/parse typeid)
-            parsed-uuid-bytes (:uuid parsed)
-            uuid-bytes (uuid/uuid->bytes the-uuid)]
-        (is (= (vec uuid-bytes) (vec parsed-uuid-bytes)))))))
+            parsed-uuid (:uuid parsed)]
+        (is (= the-uuid parsed-uuid))))))
 
 (deftest create-uuid-versions-test
   (testing "Create accepts UUIDv7 (time-ordered)"
@@ -670,6 +666,67 @@
           typeid (t/create "test" the-uuid)]
       (is (string? typeid))
       (is (.startsWith typeid "test_")))))
+
+;; T016-T017: Round-trip conversion tests for User Story 1
+(deftest uuid-round-trip-v7-test
+  (testing "Round-trip UUIDv7 through TypeID preserves UUID equality"
+    (let [original-uuid #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "user" original-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= original-uuid recovered-uuid))
+      (is (uuid? recovered-uuid)))))
+
+(deftest uuid-round-trip-v4-test
+  (testing "Round-trip UUIDv4 through TypeID preserves UUID equality"
+    (let [original-uuid #uuid "550e8400-e29b-41d4-a716-446655440000"
+          typeid (t/create "order" original-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= original-uuid recovered-uuid))
+      (is (uuid? recovered-uuid)))))
+
+(deftest uuid-round-trip-v1-test
+  (testing "Round-trip UUIDv1 through TypeID preserves UUID equality"
+    (let [original-uuid #uuid "c232ab00-9414-11ec-b3c8-9f68deced846"
+          typeid (t/create "session" original-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= original-uuid recovered-uuid))
+      (is (uuid? recovered-uuid)))))
+
+(deftest uuid-round-trip-edge-cases-test
+  (testing "Round-trip zero UUID preserves equality"
+    (let [zero-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "test" zero-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= zero-uuid recovered-uuid))
+      (is (uuid? recovered-uuid))))
+
+  (testing "Round-trip max UUID preserves equality"
+    (let [max-uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          typeid (t/create "test" max-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= max-uuid recovered-uuid))
+      (is (uuid? recovered-uuid))))
+
+  (testing "Round-trip min timestamp UUIDv7 preserves equality"
+    (let [min-time-uuid #uuid "00000000-0000-7000-8000-000000000000"
+          typeid (t/create "test" min-time-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= min-time-uuid recovered-uuid))
+      (is (uuid? recovered-uuid))))
+
+  (testing "Round-trip max timestamp UUIDv7 preserves equality"
+    (let [max-time-uuid #uuid "ffffffff-ffff-7fff-bfff-ffffffffffff"
+          typeid (t/create "test" max-time-uuid)
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      (is (= max-time-uuid recovered-uuid))
+      (is (uuid? recovered-uuid)))))
 
 (deftest create-invalid-uuid-type-test
   (testing "Create throws on non-UUID argument"
@@ -732,16 +789,92 @@
           typeid (t/create (if (empty? prefix) nil prefix) the-uuid)
           ;; Parse it back
           parsed (t/parse typeid)
-          parsed-uuid-bytes (:uuid parsed)
-          uuid-bytes (uuid/uuid->bytes the-uuid)]
+          parsed-uuid (:uuid parsed)]
       ;; Verify round-trip consistency
       (and
        ;; Prefix should match
         (= (if (empty? prefix) "" prefix) (:prefix parsed))
-       ;; UUID bytes should match
-        (= (vec uuid-bytes) (vec parsed-uuid-bytes))
+       ;; UUID objects should match
+        (= the-uuid parsed-uuid)
        ;; Should be valid TypeID
         (nil? (t/explain typeid))))))
+
+;; T015: Property-based test for UUID round-trip equality (User Story 1)
+(defspec uuid-round-trip-equality-property
+  {:num-tests 100
+   :seed 98765} ; Deterministic seed
+  (prop/for-all [prefix gen-valid-prefix]
+    ;; Generate a random UUID
+    (let [original-uuid #?(:clj (java.util.UUID/randomUUID)
+                           :cljs (random-uuid))
+          ;; Create TypeID from the UUID
+          typeid (t/create prefix original-uuid)
+          ;; Parse it back
+          parsed (t/parse typeid)
+          recovered-uuid (:uuid parsed)]
+      ;; Verify: original UUID equals recovered UUID
+      (and
+       ;; UUID objects must be equal
+        (= original-uuid recovered-uuid)
+       ;; Both must be UUID objects
+        (uuid? original-uuid)
+        (uuid? recovered-uuid)))))
+
+;; T019-T022: User Story 2 - Database integration and UUID serialization tests
+(deftest uuid-database-ready-test
+  (testing "Parsed UUID is database-ready (platform native type)"
+    (let [typeid (t/create "user")
+          parsed (t/parse typeid)
+          uuid-val (:uuid parsed)]
+      ;; UUID should be platform-native type
+      (is (uuid? uuid-val))
+      #?(:clj (is (instance? java.util.UUID uuid-val))
+         :cljs (is (instance? cljs.core/UUID uuid-val))))))
+
+(deftest uuid-equality-operators-test
+  (testing "Parsed UUIDs work with platform equality operators"
+    (let [uuid1 #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid1 (t/create "test" uuid1)
+          parsed1 (t/parse typeid1)
+
+          uuid2 #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid2 (t/create "test" uuid2)
+          parsed2 (t/parse typeid2)
+
+          uuid3 #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8b"
+          typeid3 (t/create "test" uuid3)
+          parsed3 (t/parse typeid3)]
+      ;; Same UUID should be equal
+      (is (= (:uuid parsed1) (:uuid parsed2)))
+      ;; Different UUID should not be equal
+      (is (not= (:uuid parsed1) (:uuid parsed3)))
+      ;; Direct UUID comparison
+      (is (= uuid1 (:uuid parsed1)))
+      (is (not= uuid3 (:uuid parsed1))))))
+
+(deftest uuid-string-serialization-test
+  (testing "UUID serializes to standard string format"
+    (let [uuid-val #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+          typeid (t/create "test" uuid-val)
+          parsed (t/parse typeid)
+          uuid-str (str (:uuid parsed))]
+      (is (string? uuid-str))
+      (is (= "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a" uuid-str))
+      ;; Should match standard hyphenated UUID format
+      (is (re-matches #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" uuid-str)))))
+
+#?(:cljs
+   (deftest uuid-json-serialization-test
+     (testing "UUID serializes to JSON correctly in ClojureScript"
+       (let [uuid-val (random-uuid)
+             typeid (t/create "user" uuid-val)
+             parsed (t/parse typeid)
+             uuid-obj (:uuid parsed)
+             ;; Serialize to JSON
+             json-str (js/JSON.stringify (clj->js {:id uuid-obj}))]
+         (is (string? json-str))
+         ;; Should contain the UUID string representation
+         (is (str/includes? json-str (str uuid-val)))))))
 
 ;; T064: Property-based test for codec encode/decode round-trip
 (defspec codec-encode-decode-round-trip-property
@@ -802,7 +935,8 @@
           parsed (t/parse typeid)
           ;; Extract components
           parsed-prefix (:prefix parsed)
-          parsed-typeid (:typeid parsed)]
+          parsed-typeid (:typeid parsed)
+          parsed-uuid (:uuid parsed)]
       ;; Verify round-trip consistency
       (and
        ;; The parsed prefix should match the original (accounting for empty string vs "")
@@ -811,7 +945,7 @@
         (= typeid parsed-typeid)
        ;; The suffix should be exactly 26 characters
         (= 26 (count (:suffix parsed)))
-       ;; The UUID should be valid (16 bytes)
-        (v/valid-uuid-bytes? (:uuid parsed))
+       ;; The UUID should be a UUID object
+        (uuid? parsed-uuid)
        ;; Re-generating from the same UUID should produce the same TypeID
-        (= typeid (codec/encode (:uuid parsed) parsed-prefix))))))
+        (= typeid (t/create parsed-prefix parsed-uuid))))))

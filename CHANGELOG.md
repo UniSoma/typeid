@@ -7,13 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-13
+
+### ⚠️ BREAKING CHANGES
+
+- **`parse` now returns platform-native UUID objects instead of byte arrays**
+
+  The `:uuid` field in the result map is now a UUID object (`java.util.UUID` on JVM, `cljs.core/UUID` in ClojureScript) instead of a byte array.
+
+  ```clojure
+  ;; v0.1.x (old)
+  (:uuid (typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t"))
+  ;;=> #object["[B" ... (byte array)]
+
+  ;; v0.2.0 (new)
+  (:uuid (typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t"))
+  ;;=> #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+  ```
+
+  **Why this change?**
+  - Direct database integration without conversion
+  - Natural equality comparisons with `=`
+  - Automatic JSON serialization
+  - Standard UUID string formatting with `str`
+  - Consistent API: `create` accepts UUIDs, `parse` returns UUIDs
+
+  **Migration:**
+  - Most code will work unchanged if you're passing UUIDs to database drivers
+  - If you need byte arrays, use `typeid.impl.uuid/uuid->bytes`:
+    ```clojure
+    (require '[typeid.impl.uuid :as uuid])
+    (let [{:keys [uuid]} (typeid/parse "user_...")]
+      (uuid/uuid->bytes uuid))  ;; Get bytes if needed
+    ```
+  - See quickstart.md for detailed migration examples
+
+### Added
+
+- **New function**: `typeid.impl.uuid/bytes->uuid` - Convert 16-byte array to platform-native UUID
+- **New function**: `typeid.impl.uuid/uuid->bytes` - Convert platform-native UUID to 16-byte array
+- **Performance benchmarks**: Added benchmarks for UUID conversion operations
+- **Test coverage**: Comprehensive round-trip tests for UUID equality across all UUID versions (v1, v4, v7)
+- **Integration tests**: Database-ready UUID usage, JSON serialization, equality operators
+
 ### Changed
 
-- **Documentation**: Added performance rationale section to README explaining why benchmark targets are appropriate
-  - Real-world throughput implications (500K-1M ops/second)
-  - Comparison to typical I/O operations (database, network, file)
-  - Use case scenarios where performance matters
-  - Clarifies that TypeID operations are negligible overhead in production systems
+- **Documentation**: Updated all examples to show UUID objects in parse results
+  - Database integration patterns now show direct UUID usage
+  - Added FAQ section explaining how to get bytes if needed
+  - Added migration guide in FAQ section
+- **API documentation**: Updated docstrings to reflect UUID return types
+- **Compliance tests**: Updated to work with UUID objects instead of byte arrays
+
+### Performance
+
+- **`bytes->uuid`**: < 500ns per operation (new function)
+- **`uuid->bytes`**: < 500ns per operation (new function)
+- **`parse`**: ~500ns additional overhead for UUID conversion (now < 3μs total)
+- All operations remain well within performance budgets
+- 73 tests, 836 assertions, 0 failures
 
 ## [0.1.1] - 2025-11-12
 

@@ -25,10 +25,10 @@
 
 **Purpose**: Prepare feature branch and verify existing baseline
 
-- [ ] T001 Verify current branch is `003-parse-uuid-return` and up to date
-- [ ] T002 [P] Run existing test suite to establish baseline in test/typeid/
-- [ ] T003 [P] Run existing benchmarks to establish baseline in dev/benchmarks/core_bench.clj
-- [ ] T004 Document baseline performance metrics for parse function (~2μs)
+- [X] T001 Verify current branch is `003-parse-uuid-return` and up to date
+- [X] T002 [P] Run existing test suite to establish baseline in test/typeid/
+- [X] T003 [P] Run existing benchmarks to establish baseline in dev/benchmarks/core_bench.clj
+- [X] T004 Document baseline performance metrics for parse function (~2μs)
 
 ---
 
@@ -38,13 +38,13 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Implement `bytes->uuid` function in src/typeid/impl/uuid.cljc with platform-specific reader conditionals
-- [ ] T006 Add docstring to `bytes->uuid` with examples for both JVM and ClojureScript platforms
-- [ ] T007 Add unit tests for `bytes->uuid` in test/typeid/impl/uuid_test.cljc validating 16-byte input requirement
-- [ ] T008 [P] Add property-based tests for byte-to-UUID determinism in test/typeid/impl/uuid_test.cljc
-- [ ] T009 [P] Add edge case tests for zero UUID and max UUID in test/typeid/impl/uuid_test.cljc
-- [ ] T010 Verify `bytes->uuid` round-trips correctly with existing `uuid->bytes` function
-- [ ] T011 Add performance benchmark for `bytes->uuid` in dev/benchmarks/core_bench.clj targeting < 500ns
+- [X] T005 Implement `bytes->uuid` function in src/typeid/impl/uuid.cljc with platform-specific reader conditionals
+- [X] T006 Add docstring to `bytes->uuid` with examples for both JVM and ClojureScript platforms
+- [X] T007 Add unit tests for `bytes->uuid` in test/typeid/impl/uuid_test.cljc validating 16-byte input requirement
+- [X] T008 [P] Add property-based tests for byte-to-UUID determinism in test/typeid/impl/uuid_test.cljc
+- [X] T009 [P] Add edge case tests for zero UUID and max UUID in test/typeid/impl/uuid_test.cljc
+- [X] T010 Verify `bytes->uuid` round-trips correctly with existing `uuid->bytes` function
+- [X] T011 Add performance benchmark for `bytes->uuid` in dev/benchmarks/core_bench.clj targeting < 500ns
 
 **Checkpoint**: Foundation ready - `bytes->uuid` function complete and tested
 
@@ -58,12 +58,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Modify `parse` function in src/typeid/core.cljc to call `bytes->uuid` before returning result map
-- [ ] T013 [US1] Update `parse` docstring in src/typeid/core.cljc to document UUID object return type with examples
-- [ ] T014 [US1] Update all parse tests in test/typeid/core_test.cljc to expect UUID objects instead of byte arrays
-- [ ] T015 [P] [US1] Add property-based test for round-trip conversion in test/typeid/core_test.cljc: UUID → create → parse → UUID equality
-- [ ] T016 [P] [US1] Add explicit round-trip tests for UUIDv1, v4, and v7 in test/typeid/core_test.cljc
-- [ ] T017 [P] [US1] Add round-trip test for edge case UUIDs (zero, max, various timestamps) in test/typeid/core_test.cljc
+- [X] T012 [US1] Modify `parse` function in src/typeid/core.cljc to call `bytes->uuid` before returning result map
+- [X] T013 [US1] Update `parse` docstring in src/typeid/core.cljc to document UUID object return type with examples
+- [X] T014 [US1] Update all parse tests in test/typeid/core_test.cljc to expect UUID objects instead of byte arrays
+- [X] T015 [P] [US1] Add property-based test for round-trip conversion in test/typeid/core_test.cljc: UUID → create → parse → UUID equality
+- [X] T016 [P] [US1] Add explicit round-trip tests for UUIDv1, v4, and v7 in test/typeid/core_test.cljc
+- [X] T017 [P] [US1] Add round-trip test for edge case UUIDs (zero, max, various timestamps) in test/typeid/core_test.cljc
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - round-trip conversions work with direct UUID equality
 
@@ -77,11 +77,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Update compliance tests in test/typeid/compliance_test.clj to compare UUID objects instead of byte arrays
-- [ ] T019 [P] [US2] Add integration test demonstrating database-ready UUID usage in test/typeid/core_test.cljc
-- [ ] T020 [P] [US2] Add test for UUID serialization to string format in test/typeid/core_test.cljc
-- [ ] T021 [P] [US2] Update ClojureScript tests to verify UUID serialization to JSON in test/typeid/core_test.cljc
-- [ ] T022 [US2] Verify parsed UUID objects work with platform equality operators (= function)
+- [X] T018 [US2] Update compliance tests in test/typeid/compliance_test.clj to compare UUID objects instead of byte arrays
+- [X] T019 [P] [US2] Add integration test demonstrating database-ready UUID usage in test/typeid/core_test.cljc
+- [X] T020 [P] [US2] Add test for UUID serialization to string format in test/typeid/core_test.cljc
+- [X] T021 [P] [US2] Update ClojureScript tests to verify UUID serialization to JSON in test/typeid/core_test.cljc
+- [X] T022 [US2] Verify parsed UUID objects work with platform equality operators (= function)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - UUIDs are database-ready without conversion
 
@@ -95,13 +95,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Update README.md introduction section to show UUID objects in all parse examples
-- [ ] T024 [US3] Update README.md "Parsing TypeIDs" section with UUID object examples and benefits
-- [ ] T025 [US3] Update README.md "Common Patterns" section showing database integration with UUID objects
-- [ ] T026 [US3] Add migration guide section to README.md referencing quickstart.md for detailed migration path
-- [ ] T027 [P] [US3] Update README.md "Round-trip Conversion" examples showing natural UUID equality
-- [ ] T028 [P] [US3] Add FAQ section to README.md addressing "How do I get bytes?" with codec/decode example
-- [ ] T029 [US3] Verify all parsing examples in README.md show UUID objects (not byte arrays) per FR-005 requirement
+- [X] T023 [US3] Update README.md introduction section to show UUID objects in all parse examples
+- [X] T024 [US3] Update README.md "Parsing TypeIDs" section with UUID object examples and benefits
+- [X] T025 [US3] Update README.md "Common Patterns" section showing database integration with UUID objects
+- [X] T026 [US3] Add migration guide section to README.md referencing quickstart.md for detailed migration path
+- [X] T027 [P] [US3] Update README.md "Round-trip Conversion" examples showing natural UUID equality
+- [X] T028 [P] [US3] Add FAQ section to README.md addressing "How do I get bytes?" with codec/decode example
+- [X] T029 [US3] Verify all parsing examples in README.md show UUID objects (not byte arrays) per FR-005 requirement
 
 **Checkpoint**: All user stories should now be independently functional - API is consistent and well-documented
 
@@ -111,20 +111,20 @@
 
 **Purpose**: Finalize breaking change, documentation, and validation
 
-- [ ] T030 [P] Update CHANGELOG.md with v0.2.0 breaking change section per contracts/api.md version contract
-- [ ] T031 [P] Add migration notes to CHANGELOG.md referencing quickstart.md for migration guide
-- [ ] T032 [P] Document performance impact in CHANGELOG.md: parse adds ~500ns for UUID conversion
-- [ ] T033 Run performance benchmarks and verify no regression beyond 10% threshold
-- [ ] T034 Verify performance budget: parse < 3μs, bytes->uuid < 1μs per contracts/api.md
-- [ ] T035 [P] Update error_semantics_test.cljc if needed to handle UUID types in test/typeid/
-- [ ] T036 [P] Run clj-kondo linter and ensure 100% clean per constitution requirement
-- [ ] T037 Run full test suite on JVM (Clojure 1.11 and 1.12) verifying all tests pass
-- [ ] T038 Run full test suite on ClojureScript via Node.js verifying all tests pass
-- [ ] T039 [P] Verify all public functions have complete docstrings per constitution requirement
-- [ ] T039b [P] Verify docstrings accurately document UUID return types for FR-006 compliance (cljdoc auto-publishes API docs)
-- [ ] T040 Review all modified files for code quality and adherence to project standards
-- [ ] T041 Run quickstart.md validation scenarios manually to verify migration guide accuracy
-- [ ] T042 Tag version as v0.2.0 in preparation for release
+- [X] T030 [P] Update CHANGELOG.md with v0.2.0 breaking change section per contracts/api.md version contract
+- [X] T031 [P] Add migration notes to CHANGELOG.md referencing quickstart.md for migration guide
+- [X] T032 [P] Document performance impact in CHANGELOG.md: parse adds ~500ns for UUID conversion
+- [X] T033 Run performance benchmarks and verify no regression beyond 10% threshold
+- [X] T034 Verify performance budget: parse < 3μs, bytes->uuid < 1μs per contracts/api.md
+- [X] T035 [P] Update error_semantics_test.cljc if needed to handle UUID types in test/typeid/
+- [X] T036 [P] Run clj-kondo linter and ensure 100% clean per constitution requirement
+- [X] T037 Run full test suite on JVM (Clojure 1.11 and 1.12) verifying all tests pass
+- [X] T038 Run full test suite on ClojureScript via Node.js verifying all tests pass
+- [X] T039 [P] Verify all public functions have complete docstrings per constitution requirement
+- [X] T039b [P] Verify docstrings accurately document UUID return types for FR-006 compliance (cljdoc auto-publishes API docs)
+- [X] T040 Review all modified files for code quality and adherence to project standards
+- [X] T041 Run quickstart.md validation scenarios manually to verify migration guide accuracy
+- [X] T042 Tag version as v0.2.0 in preparation for release
 
 ---
 

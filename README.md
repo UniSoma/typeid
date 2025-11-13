@@ -92,7 +92,7 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ;; Decode TypeID to UUID bytes
 (codec/decode "user_01h5fskfsk4fpeqwnsyz5hj55t")
-;;=> #object["[B" ... (16-byte array)]
+;;=> #object["[B" 0x... (16-byte array)]
 
 ;; Convert UUID bytes to hex string
 (codec/uuid->hex uuid-bytes)
@@ -314,14 +314,11 @@ Extract components from a TypeID:
 ### Store UUID in Database, Return TypeID to Clients
 
 ```clojure
-(require '[typeid.codec :as codec])
-
 (defn save-and-return-order [order-data]
   (let [order-id (typeid/create "order")
-        {:keys [uuid]} (typeid/parse order-id)
-        uuid-hex (codec/uuid->hex uuid)]
-    ;; Save uuid-hex to database (efficient storage)
-    (save-to-db! {:uuid uuid-hex :data order-data})
+        {:keys [uuid]} (typeid/parse order-id)]
+    ;; Save UUID directly to database (platform-native type)
+    (save-to-db! {:uuid uuid :data order-data})
     ;; Return TypeID to client (human-readable)
     {:id order-id :data order-data}))
 
@@ -332,18 +329,16 @@ Extract components from a TypeID:
 ### Fetch by TypeID, Query by UUID
 
 ```clojure
-(require '[typeid.codec :as codec])
-
 (defn fetch-order [typeid-str]
   (try
-    (let [uuid-bytes (codec/decode typeid-str)
-          uuid-hex (codec/uuid->hex uuid-bytes)]
-      (query-db {:uuid uuid-hex}))
+    (let [{:keys [uuid]} (typeid/parse typeid-str)]
+      ;; Use UUID directly in database queries
+      (query-db {:uuid uuid}))
     (catch Exception e
       {:error (str "Invalid TypeID: " (ex-message e))})))
 
 (fetch-order "order_01h5fskp7y2t3z9x8w6v5u4s3r")
-;;=> {:uuid "..." :items [...] :total 99.99}
+;;=> {:uuid #uuid "..." :items [...] :total 99.99}
 ```
 
 ### Prefix-Based Type Checking
@@ -370,24 +365,22 @@ Extract components from a TypeID:
 ### Integration with PostgreSQL
 
 ```clojure
-(require '[next.jdbc :as jdbc]
-         '[typeid.codec :as codec])
+(require '[next.jdbc :as jdbc])
 
-;; Store UUID as UUID column
+;; Store UUID as UUID column (works directly with java.util.UUID)
 (defn insert-user [ds name email]
   (let [user-id (typeid/create "user")
-        {:keys [uuid]} (typeid/parse user-id)
-        uuid-hex (codec/uuid->hex uuid)]
+        {:keys [uuid]} (typeid/parse user-id)]
     (jdbc/execute-one! ds
-      ["INSERT INTO users (id, name, email) VALUES (?::uuid, ?, ?)"
-       uuid-hex name email])
+      ["INSERT INTO users (id, name, email) VALUES (?, ?, ?)"
+       uuid name email])
     {:typeid user-id :name name :email email}))
 
 (defn find-user [ds typeid-str]
-  (let [uuid-bytes (codec/decode typeid-str)
-        uuid-hex (codec/uuid->hex uuid-bytes)]
+  (let [{:keys [uuid]} (typeid/parse typeid-str)]
+    ;; UUID object works directly with JDBC
     (jdbc/execute-one! ds
-      ["SELECT * FROM users WHERE id = ?::uuid" uuid-hex])))
+      ["SELECT * FROM users WHERE id = ?" uuid])))
 ```
 
 ### Integration with Web APIs (Ring)
@@ -614,6 +607,48 @@ If you're generating TypeIDs within your system and storing them, you generally 
 **Can I customize the prefix separator?**
 
 No, the TypeID specification requires the underscore (`_`) separator. This ensures consistency across all TypeID implementations and languages.
+
+**How do I get UUID bytes if I need them?**
+
+In version 0.2.0+, `parse` returns platform-native UUID objects (not byte arrays). If you need the raw bytes:
+
+```clojure
+(require '[typeid.impl.uuid :as uuid])
+
+(let [{:keys [uuid]} (typeid/parse "user_01h5fskfsk4fpeqwnsyz5hj55t")
+      uuid-bytes (uuid/uuid->bytes uuid)]
+  ;; uuid-bytes is a 16-byte array
+  (alength uuid-bytes))
+;;=> 16
+```
+
+For most use cases, you don't need the bytes - UUID objects work directly with:
+- Database drivers (JDBC, PostgreSQL, etc.)
+- JSON serialization
+- String conversion (`str`)
+- Equality comparisons (`=`)
+
+**What changed in v0.2.0?**
+
+Version 0.2.0 introduced a **breaking change**: `parse` now returns platform-native UUID objects instead of byte arrays.
+
+```clojure
+;; v0.1.x (old)
+(:uuid (typeid/parse "user_..."))
+;;=> #object["[B" ... (byte array)]
+
+;; v0.2.0+ (new)
+(:uuid (typeid/parse "user_..."))
+;;=> #uuid "018c3f9e-9e4e-7a8a-8b2a-7e8e9e4e7a8a"
+```
+
+**Benefits:**
+- Direct database integration (no conversion needed)
+- Natural equality with `=`
+- Automatic JSON serialization
+- Standard UUID string formatting
+
+**Migration:** If your code expects byte arrays, use `typeid.impl.uuid/uuid->bytes` to convert. See the quickstart guide for detailed migration steps.
 
 ## Development
 
