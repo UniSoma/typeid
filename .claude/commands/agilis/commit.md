@@ -13,13 +13,19 @@ Follow these steps:
    - If this is a notable change, add an entry to CHANGELOG.md under the appropriate version
    - Skip this step if changes are internal only (refactoring, tests, benchmarks, etc.)
 
-3. **Create commit**: Follow the standard git commit workflow:
+3. **Prepare commit message**:
    - Review the changes one more time
-   - Write a clear, concise commit message
-   - Create the commit
+   - Draft a clear, concise commit message
+   - **STOP - Do not commit yet**
+
+4. **Request user approval**:
+   - Present the proposed commit message to the user
+   - Ask if they want to proceed with the commit
+   - Wait for explicit confirmation before running `git commit`
 
 ## Important Notes
 
-- **Always confirm with the user** before making irreversible changes (commits, tags)
-- **Do not push automatically** - let the user decide when to push
+- **NEVER commit automatically** - Always ask the user for explicit approval before running `git commit`
+- **Do not push automatically** - Let the user decide when to push
 - **Use your judgment** to determine if documentation updates are needed. When in doubt, ask the user.
+- **Confirmation required**: Even if the command says "commit", you must ask first
