@@ -33,12 +33,12 @@ TypeID is a modern, type-safe extension of UUIDv7. It adds an optional type pref
 
 ### Clojure CLI (deps.edn)
 ```clojure
-{:deps {io.github.unisoma/typeid {:mvn/version "0.1.0"}}}
+{:deps {io.github.unisoma/typeid {:mvn/version "0.1.1"}}}
 ```
 
 ### Leiningen (project.clj)
 ```clojure
-[io.github.unisoma/typeid "0.1.0"]
+[io.github.unisoma/typeid "0.1.1"]
 ```
 
 ## Quick Start
