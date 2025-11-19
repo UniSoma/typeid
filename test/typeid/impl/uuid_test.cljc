@@ -121,6 +121,116 @@
         (is (v/valid-uuidv7-bytes? uuid-bytes)
           "Generated UUID should pass strict UUIDv7 validation")))))
 
+;; Timestamp-controlled UUIDv7 generation tests
+
+(deftest generate-uuidv7-with-timestamp-test
+  (testing "Generate UUIDv7 with explicit timestamp"
+    (let [test-timestamp 1699564800000  ; 2023-11-10T00:00:00Z
+          uuid-bytes (uuid/generate-uuidv7 test-timestamp)
+          ;; Extract timestamp from first 48 bits
+          extracted-ts #?(:clj (reduce (fn [acc b]
+                                         (+ (* acc 256) (bit-and b 0xFF)))
+                                 0
+                                 (take 6 uuid-bytes))
+                          :cljs (let [b0 (bit-and (aget uuid-bytes 0) 0xFF)
+                                      b1 (bit-and (aget uuid-bytes 1) 0xFF)
+                                      b2 (bit-and (aget uuid-bytes 2) 0xFF)
+                                      b3 (bit-and (aget uuid-bytes 3) 0xFF)
+                                      b4 (bit-and (aget uuid-bytes 4) 0xFF)
+                                      b5 (bit-and (aget uuid-bytes 5) 0xFF)]
+                                  (+ (+ (* b0 1099511627776)
+                                       (* b1 4294967296))
+                                    (+ (* b2 16777216)
+                                      (* b3 65536))
+                                    (+ (* b4 256)
+                                      b5))))]
+      (is (= test-timestamp extracted-ts)
+        (str "Expected timestamp " test-timestamp ", got " extracted-ts))))
+
+  (testing "Generate UUIDv7 with timestamp 0 (Unix epoch)"
+    (let [uuid-bytes (uuid/generate-uuidv7 0)
+          ;; First 6 bytes should all be 0
+          first-six (take 6 uuid-bytes)]
+      (is (every? zero? first-six)
+        "Timestamp 0 should produce all-zero timestamp bytes")))
+
+  (testing "Generate UUIDv7 with max valid timestamp"
+    (let [max-ts 281474976710655  ; 2^48 - 1
+          uuid-bytes (uuid/generate-uuidv7 max-ts)
+          ;; All timestamp bytes should be 0xFF
+          first-six (take 6 uuid-bytes)]
+      (is (every? #(= 255 (bit-and % 0xFF)) first-six)
+        "Max timestamp should produce all-0xFF timestamp bytes")))
+
+  (testing "Generated UUID with custom timestamp has correct version and variant"
+    (let [uuid-bytes (uuid/generate-uuidv7 1699564800000)
+          version-byte (aget uuid-bytes 6)
+          version (bit-and (bit-shift-right version-byte 4) 0x0F)
+          variant-byte (bit-and (aget uuid-bytes 8) 0xFF)
+          variant (bit-and (bit-shift-right variant-byte 6) 0x03)]
+      (is (= 7 version) "UUID version should be 7")
+      (is (= 2 variant) "UUID variant should be 2")))
+
+  (testing "Generated UUID with custom timestamp passes validation"
+    (let [uuid-bytes (uuid/generate-uuidv7 1699564800000)]
+      (is (v/valid-uuidv7-bytes? uuid-bytes)
+        "Generated UUID with custom timestamp should pass validation"))))
+
+(deftest generate-uuidv7-timestamp-ordering-test
+  (testing "UUIDs with different timestamps sort correctly"
+    (let [ts1 1000
+          ts2 2000
+          ts3 3000
+          uuid1 (uuid/generate-uuidv7 ts1)
+          uuid2 (uuid/generate-uuidv7 ts2)
+          uuid3 (uuid/generate-uuidv7 ts3)]
+      ;; Compare byte sequences - earlier timestamps should sort first
+      (is (neg? (compare (vec uuid1) (vec uuid2)))
+        "UUID with earlier timestamp should sort before later")
+      (is (neg? (compare (vec uuid2) (vec uuid3)))
+        "UUID ordering should be transitive")))
+
+  (testing "Same timestamp produces different UUIDs due to randomness"
+    (let [ts 1699564800000
+          uuid1 (uuid/generate-uuidv7 ts)
+          uuid2 (uuid/generate-uuidv7 ts)]
+      (is (not= (vec uuid1) (vec uuid2))
+        "Same timestamp should still produce unique UUIDs"))))
+
+(deftest generate-uuidv7-timestamp-validation-test
+  (testing "Negative timestamp throws exception"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Timestamp out of valid range"
+          (uuid/generate-uuidv7 -1)))
+
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Timestamp out of valid range"
+          (uuid/generate-uuidv7 -1000))))
+
+  (testing "Timestamp exceeding 48-bit range throws exception"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Timestamp out of valid range"
+          (uuid/generate-uuidv7 281474976710656)))  ; 2^48
+
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo
+                             :cljs js/Error)
+          #"Timestamp out of valid range"
+          (uuid/generate-uuidv7 300000000000000))))  ; Well over max
+
+  (testing "Exception contains structured error data"
+    (try
+      (uuid/generate-uuidv7 -100)
+      (is false "Should have thrown exception")
+      (catch #?(:clj clojure.lang.ExceptionInfo :cljs js/Error) e
+        (let [data (ex-data e)]
+          (is (= :typeid/invalid-timestamp (:type data)))
+          (is (= -100 (:input data)))
+          (is (= 0 (:min data)))
+          (is (= 281474976710655 (:max data))))))))
+
 ;; T005-T010: bytes->uuid function tests
 
 (deftest bytes->uuid-basic-test

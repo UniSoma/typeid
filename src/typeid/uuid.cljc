@@ -71,6 +71,16 @@
 (defn generate-uuidv7
   "Generate UUIDv7 (RFC 9562) bytes with timestamp-based ordering.
 
+   ## Arities
+
+   1. **Zero-arity**: Generate with current timestamp
+   2. **One-arity**: Generate with explicit timestamp in milliseconds
+
+   ## Parameters
+
+   **timestamp-ms** (one-arity only) - Unix timestamp in milliseconds.
+   Must be non-negative and within 48-bit range (0 to 281474976710655).
+
    ## Returns
 
    16-byte array representing a UUIDv7:
@@ -88,11 +98,20 @@
    - **Byte 8**: Variant bits (2 bits = `10` RFC 4122) + random (6 bits)
    - **Bytes 9-15**: Cryptographically random data (56 bits)
 
+   ## Exceptions
+
+   Throws `ExceptionInfo` with type `:typeid/invalid-timestamp` if timestamp
+   is negative or exceeds 48-bit range.
+
    ## Examples
 
    ```clojure
-   ;; Generate UUIDv7 bytes
+   ;; Generate UUIDv7 bytes with current timestamp
    (generate-uuidv7)
+   ;;=> #object[\"[B\" 0x...] (16 bytes)
+
+   ;; Generate with explicit timestamp (e.g., for data migration)
+   (generate-uuidv7 1699564800000)  ; 2023-11-10T00:00:00Z
    ;;=> #object[\"[B\" 0x...] (16 bytes)
 
    ;; Convert to UUID object for use with TypeID
@@ -106,56 +125,73 @@
      (typeid/create \"order\" uuid-obj))
    ;;=> \"order_01h455vb4pex5vsknk084sn02q\"
 
+   ;; Create TypeID with historical timestamp
+   (let [historical-ts 1609459200000  ; 2021-01-01T00:00:00Z
+         uuid-bytes (generate-uuidv7 historical-ts)
+         uuid-obj (bytes->uuid uuid-bytes)]
+     (typeid/create \"order\" uuid-obj))
+   ;;=> \"order_01erqvm6c0...\" (encodes historical timestamp)
+
    ;; Verify chronological ordering
-   (let [uuid1 (generate-uuidv7)]
-     (Thread/sleep 10)
-     (let [uuid2 (generate-uuidv7)]
-       (neg? (compare (seq uuid1) (seq uuid2)))))
+   (let [uuid1 (generate-uuidv7 1000)
+         uuid2 (generate-uuidv7 2000)]
+     (neg? (compare (seq uuid1) (seq uuid2))))
    ;;=> true ; uuid1 sorts before uuid2
    ```
 
    See also: [[bytes->uuid]], [[uuid->bytes]], [[typeid.core/create]]"
-  ^bytes []
-  (let [timestamp (current-timestamp-ms)
-        rand-bytes (random-bytes 10) ;; 10 random bytes (80 bits)
-        uuid-bytes #?(:clj (byte-array 16)
-                      :cljs (js/Uint8Array. 16))]
+  (^bytes [] (generate-uuidv7 (current-timestamp-ms)))
+  (^bytes [timestamp-ms]
+   ;; Validate timestamp
+    (when (or (neg? timestamp-ms)
+            (> timestamp-ms 281474976710655)) ; 2^48 - 1
+      (throw (ex-info "Timestamp out of valid range"
+               {:type :typeid/invalid-timestamp
+                :message (str "Timestamp must be between 0 and 281474976710655, got: " timestamp-ms)
+                :input timestamp-ms
+                :min 0
+                :max 281474976710655})))
 
-    ;; Set timestamp (bytes 0-5): 48 bits
-    #?(:clj (do
-              (aset uuid-bytes 0 (unchecked-byte (bit-shift-right timestamp 40)))
-              (aset uuid-bytes 1 (unchecked-byte (bit-shift-right timestamp 32)))
-              (aset uuid-bytes 2 (unchecked-byte (bit-shift-right timestamp 24)))
-              (aset uuid-bytes 3 (unchecked-byte (bit-shift-right timestamp 16)))
-              (aset uuid-bytes 4 (unchecked-byte (bit-shift-right timestamp 8)))
-              (aset uuid-bytes 5 (unchecked-byte timestamp)))
-       :cljs (do
-               ;; JavaScript bitwise ops are 32-bit, so use division for high bytes
-               (aset uuid-bytes 0 (js/Math.floor (/ timestamp 1099511627776)))  ; / 2^40
-               (aset uuid-bytes 1 (bit-and (js/Math.floor (/ timestamp 4294967296)) 0xFF))  ; / 2^32
-               (aset uuid-bytes 2 (bit-and (bit-shift-right timestamp 24) 0xFF))
-               (aset uuid-bytes 3 (bit-and (bit-shift-right timestamp 16) 0xFF))
-               (aset uuid-bytes 4 (bit-and (bit-shift-right timestamp 8) 0xFF))
-               (aset uuid-bytes 5 (bit-and timestamp 0xFF))))
+    (let [timestamp (long timestamp-ms)
+          rand-bytes (random-bytes 10) ;; 10 random bytes (80 bits)
+          uuid-bytes #?(:clj (byte-array 16)
+                        :cljs (js/Uint8Array. 16))]
 
-    ;; Byte 6: Random (12 bits in low nibble) + version (4 bits = 0111 in high nibble)
-    #?(:clj (aset uuid-bytes 6 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 0) 0x0F) 0x70)))
-       :cljs (aset uuid-bytes 6 (bit-or (bit-and (aget rand-bytes 0) 0x0F) 0x70)))
+     ;; Set timestamp (bytes 0-5): 48 bits
+      #?(:clj (do
+                (aset uuid-bytes 0 (unchecked-byte (bit-shift-right timestamp 40)))
+                (aset uuid-bytes 1 (unchecked-byte (bit-shift-right timestamp 32)))
+                (aset uuid-bytes 2 (unchecked-byte (bit-shift-right timestamp 24)))
+                (aset uuid-bytes 3 (unchecked-byte (bit-shift-right timestamp 16)))
+                (aset uuid-bytes 4 (unchecked-byte (bit-shift-right timestamp 8)))
+                (aset uuid-bytes 5 (unchecked-byte timestamp)))
+         :cljs (do
+                ;; JavaScript bitwise ops are 32-bit, so use division for high bytes
+                 (aset uuid-bytes 0 (js/Math.floor (/ timestamp 1099511627776)))  ; / 2^40
+                 (aset uuid-bytes 1 (bit-and (js/Math.floor (/ timestamp 4294967296)) 0xFF))  ; / 2^32
+                 (aset uuid-bytes 2 (bit-and (bit-shift-right timestamp 24) 0xFF))
+                 (aset uuid-bytes 3 (bit-and (bit-shift-right timestamp 16) 0xFF))
+                 (aset uuid-bytes 4 (bit-and (bit-shift-right timestamp 8) 0xFF))
+                 (aset uuid-bytes 5 (bit-and timestamp 0xFF))))
 
-    ;; Byte 7: Random (8 bits)
-    #?(:clj (aset uuid-bytes 7 (aget ^bytes rand-bytes 1))
-       :cljs (aset uuid-bytes 7 (aget rand-bytes 1)))
+     ;; Byte 6: Random (12 bits in low nibble) + version (4 bits = 0111 in high nibble)
+      #?(:clj (aset uuid-bytes 6 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 0) 0x0F) 0x70)))
+         :cljs (aset uuid-bytes 6 (bit-or (bit-and (aget rand-bytes 0) 0x0F) 0x70)))
 
-    ;; Byte 8: Variant (2 bits = 10 in high 2 bits) + random (6 bits in low 6 bits)
-    #?(:clj (aset uuid-bytes 8 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 2) 0x3F) 0x80)))
-       :cljs (aset uuid-bytes 8 (bit-or (bit-and (aget rand-bytes 2) 0x3F) 0x80)))
+     ;; Byte 7: Random (8 bits)
+      #?(:clj (aset uuid-bytes 7 (aget ^bytes rand-bytes 1))
+         :cljs (aset uuid-bytes 7 (aget rand-bytes 1)))
 
-    ;; Bytes 9-15: Random (56 bits)
-    #?(:clj (System/arraycopy rand-bytes 3 uuid-bytes 9 7)
-       :cljs (dotimes [i 7]
-               (aset uuid-bytes (+ 9 i) (aget rand-bytes (+ 3 i)))))
+     ;; Byte 8: Variant (2 bits = 10 in high 2 bits) + random (6 bits in low 6 bits)
+      #?(:clj (aset uuid-bytes 8 (unchecked-byte (bit-or (bit-and (aget ^bytes rand-bytes 2) 0x3F) 0x80)))
+         :cljs (aset uuid-bytes 8 (bit-or (bit-and (aget rand-bytes 2) 0x3F) 0x80)))
 
-    uuid-bytes))
+     ;; Bytes 9-15: Random (56 bits)
+      #?(:clj (System/arraycopy rand-bytes 3 uuid-bytes 9 7)
+         :cljs (dotimes [i 7]
+                 (aset uuid-bytes (+ 9 i) (aget rand-bytes (+ 3 i)))))
+
+      uuid-bytes)))
 
 #_{:clj-kondo/ignore [:shadowed-var]}
 (defn uuid->bytes

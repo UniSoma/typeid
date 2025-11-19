@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **New arity**: `typeid.uuid/generate-uuidv7` now accepts an optional timestamp parameter
+  - Zero-arity: Generate with current timestamp (unchanged behavior)
+  - One-arity: Generate with explicit timestamp in milliseconds
+  - Enables historical data migrations, deterministic testing, and audit logs with business timestamps
+  - Validates timestamp is non-negative and within 48-bit range (0 to 281474976710655)
+  - Throws `ExceptionInfo` with `:typeid/invalid-timestamp` type for invalid timestamps
+
+  ```clojure
+  ;; Generate with current time (existing behavior)
+  (uuid/generate-uuidv7)
+
+  ;; Generate with explicit timestamp
+  (uuid/generate-uuidv7 1699564800000)  ; 2023-11-10T00:00:00Z
+
+  ;; Complete workflow for historical data
+  (let [uuid-bytes (uuid/generate-uuidv7 historical-timestamp)
+        uuid-obj (uuid/bytes->uuid uuid-bytes)]
+    (typeid/create "order" uuid-obj))
+  ```
+
 ## [0.3.0] - 2025-11-13
 
 ### ⚠️ BREAKING CHANGES
