@@ -728,6 +728,81 @@
       (is (= max-time-uuid recovered-uuid))
       (is (uuid? recovered-uuid)))))
 
+;; Nil UUID (all-zeros) as default/sentinel TypeID tests
+(deftest nil-uuid-default-typeid-test
+  (testing "Nil UUID creates predictable TypeID for default/sentinel values"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          user-default (t/create "user" nil-uuid)
+          order-default (t/create "order" nil-uuid)]
+      ;; Predictable output
+      (is (= "user_00000000000000000000000000" user-default))
+      (is (= "order_00000000000000000000000000" order-default))
+      ;; Different prefixes produce different TypeIDs
+      (is (not= user-default order-default))))
+
+  (testing "Nil UUID TypeID round-trips correctly"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "user" nil-uuid)
+          parsed (t/parse typeid)]
+      (is (= nil-uuid (:uuid parsed)))
+      (is (= "user" (:prefix parsed)))
+      (is (= "00000000000000000000000000" (:suffix parsed)))
+      (is (= typeid (:typeid parsed)))))
+
+  (testing "Nil UUID can be detected from parsed TypeID"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          default-typeid (t/create "user" nil-uuid)
+          regular-typeid (t/create "user")
+          default-parsed (:uuid (t/parse default-typeid))
+          regular-parsed (:uuid (t/parse regular-typeid))]
+      ;; Can check if a TypeID uses the nil UUID
+      (is (= nil-uuid default-parsed))
+      (is (not= nil-uuid regular-parsed))))
+
+  (testing "Nil UUID TypeID validates successfully"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "user" nil-uuid)]
+      (is (nil? (t/explain typeid)))))
+
+  (testing "Nil UUID TypeID with empty prefix"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          typeid (t/create "" nil-uuid)]
+      (is (= "00000000000000000000000000" typeid))
+      (let [parsed (t/parse typeid)]
+        (is (= "" (:prefix parsed)))
+        (is (= nil-uuid (:uuid parsed))))))
+
+  (testing "Nil UUID TypeID sorts before all generated TypeIDs"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          default-typeid (t/create "user" nil-uuid)
+          generated-typeids (repeatedly 10 #(t/create "user"))]
+      ;; Default should sort before all generated (UUIDv7 timestamps > 0)
+      (doseq [gen-typeid generated-typeids]
+        (is (neg? (compare default-typeid gen-typeid))
+          (str "Default TypeID should sort before generated: " gen-typeid)))))
+
+  (testing "Multiple nil UUID TypeIDs with same prefix are identical"
+    (let [nil-uuid #uuid "00000000-0000-0000-0000-000000000000"
+          default1 (t/create "user" nil-uuid)
+          default2 (t/create "user" nil-uuid)]
+      (is (= default1 default2)
+        "Same prefix + nil UUID should produce identical TypeIDs"))))
+
+(deftest max-uuid-sentinel-typeid-test
+  (testing "Max UUID creates predictable TypeID for sentinel values"
+    (let [max-uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          typeid (t/create "user" max-uuid)]
+      (is (= "user_7zzzzzzzzzzzzzzzzzzzzzzzzz" typeid))))
+
+  (testing "Max UUID TypeID sorts after all generated TypeIDs"
+    (let [max-uuid #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          max-typeid (t/create "user" max-uuid)
+          generated-typeids (repeatedly 10 #(t/create "user"))]
+      ;; Max should sort after all generated
+      (doseq [gen-typeid generated-typeids]
+        (is (pos? (compare max-typeid gen-typeid))
+          (str "Max TypeID should sort after generated: " gen-typeid))))))
+
 (deftest create-invalid-uuid-type-test
   (testing "Create throws on non-UUID argument"
     (is (thrown? #?(:clj Exception :cljs js/Error)
